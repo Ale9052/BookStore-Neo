@@ -11,12 +11,12 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(__dirname));
 
-// Servir el index.html en la raíz para evitar el error "Cannot GET /"
+// Evita el error "Cannot GET /" sirviendo el archivo principal
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Ruta absoluta y segura para la base de datos en los servidores de Render
+// Ruta segura para que no se congele la base de datos en Render
 const dbPath = path.join('/tmp', 'libreria.db');
 const db = new sqlite3.Database(dbPath);
 
@@ -65,7 +65,7 @@ db.serialize(() => {
     FOREIGN KEY(order_id) REFERENCES orders(id)
   )`);
 
-  // Crear al administrador automáticamente apenas se monte el servidor
+  // CREACIÓN AUTOMÁTICA DEL ADMINISTRADOR
   const adminEmail = 'admin@gmail.com';
   const adminPassword = 'admin123';
   db.get('SELECT * FROM users WHERE email = ?', [adminEmail], (err, row) => {
