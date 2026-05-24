@@ -1,4 +1,4 @@
-const API_URL = window.location.origin;
+const "https://bookstore-neo.onrender.com";
 let allBooksLocal = [];
 let purchasedBooksLocal = [];
 
