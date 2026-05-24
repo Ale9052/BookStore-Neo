@@ -2,10 +2,10 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const path = require('path'); // Requerido para servir el index.html correctamente
+const path = require('path'); 
 
 const app = express();
-// Ajuste para Render: usa el puerto asignado por la plataforma
+// Ajuste para Render: usa el puerto asignado por la plataforma o el 3000 localmente
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
@@ -13,13 +13,14 @@ app.use(bodyParser.json());
 // Sirve archivos estáticos (html, css, js) desde la raíz del proyecto
 app.use(express.static(__dirname));
 
-// Solución al error "Cannot GET /" en Render
+// Solución definitiva al error "Cannot GET /" en Render
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Ajuste para Render: la base de datos se guarda en la carpeta /tmp
-const db = new sqlite3.Database('/tmp/libreria.db');
+// Ajuste para Render: la base de datos se guarda en la carpeta /tmp con ruta absoluta segura
+const dbPath = path.join('/tmp', 'libreria.db');
+const db = new sqlite3.Database(dbPath);
 
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
@@ -65,6 +66,19 @@ db.serialize(() => {
     quantity INTEGER,
     FOREIGN KEY(order_id) REFERENCES orders(id)
   )`);
+
+  // SOLUCIÓN AL ADMIN: Insertar automáticamente al administrador si no existe en la base de datos
+  const adminEmail = 'admin@gmail.com';
+  const adminPassword = 'admin123';
+  db.get('SELECT * FROM users WHERE email = ?', [adminEmail], (err, row) => {
+    if (!row) {
+      db.run('INSERT INTO users (email, password, role) VALUES (?, ?, ?)', [adminEmail, adminPassword, 'admin'], (err) => {
+        if (!err) {
+          console.log('Usuario administrador inicializado correctamente (admin@gmail.com).');
+        }
+      });
+    }
+  });
 });
 
 // --- RUTAS DE AUTENTICACIÓN ---
