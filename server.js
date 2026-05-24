@@ -1,221 +1,78 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
-const bodyParser = require('body-parser');
-const cors = require('cors');
+const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(bodyParser.json());
+// CONFIGURACIONES INTERNAS FUNDAMENTALES
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
-const db = new sqlite3.Database('./libreria.db');
+// PROCESAMIENTO SQLITE
+const dbPath = path.join(__dirname, 'libreria.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error SQLite:', err.message);
+    } else {
+        console.log('Base de datos conectada.');
+        db.run(`CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            correo TEXT UNIQUE,
+            contrasena TEXT,
+            rol TEXT DEFAULT 'cliente'
+        )`);
+    }
+});
 
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE,
-    password TEXT,
-    role TEXT DEFAULT 'user'
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS books (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT,
-    author TEXT,
-    category TEXT,
-    price REAL,
-    image TEXT,
-    full_link TEXT,
-    badge TEXT
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS cart (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    book_id INTEGER,
-    quantity INTEGER DEFAULT 1,
-    FOREIGN KEY(user_id) REFERENCES users(id),
-    FOREIGN KEY(book_id) REFERENCES books(id)
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    user_email TEXT,
-    total REAL,
-    date TEXT,
-    status TEXT DEFAULT 'Pagado',
-    FOREIGN KEY(user_id) REFERENCES users(id)
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS order_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id INTEGER,
-    book_title TEXT,
-    price REAL,
-    quantity INTEGER,
-    FOREIGN KEY(order_id) REFERENCES orders(id)
-  )`);
-
-  // Migración segura por si la tabla ya existía previamente
-  db.get("PRAGMA table_info(books)", (err, rows) => {
-    db.run(`ALTER TABLE books ADD COLUMN category TEXT DEFAULT 'Programación'`, () => {});
-    db.run(`ALTER TABLE books ADD COLUMN full_link TEXT`, () => {});
-  });
-
-  db.run(`INSERT OR IGNORE INTO users (id, email, password, role)
-          VALUES (1, 'admin@gmail.com', '123456', 'admin')`);
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.post('/register', (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) return res.json({ success: false, error: 'Campos vacíos.' });
-  if (!email.toLowerCase().endsWith('@gmail.com')) return res.json({ success: false, error: 'Debe ser @gmail.com.' });
-  if (password.length < 6) return res.json({ success: false, error: 'Mínimo 6 caracteres.' });
+    const { correo, contrasena, rol } = req.body;
+    const userRole = rol || 'cliente';
 
-  db.run('INSERT INTO users (email, password) VALUES (?, ?)', [email, password], function(err) {
-    if (err) return res.json({ success: false, error: 'Este correo ya se encuentra registrado.' });
-    res.json({ success: true });
-  });
+    if (!correo || !contrasena) {
+        return res.status(400).json({ success: false, message: 'Faltan campos mandatorios.' });
+    }
+
+    const query = `INSERT INTO usuarios (correo, contrasena, rol) VALUES (?, ?, ?)`;
+    db.run(query, [correo, contrasena, userRole], function(err) {
+        if (err) {
+            if (err.message.includes('UNIQUE')) {
+                return res.status(400).json({ success: false, message: 'Este correo ya existe.' });
+            }
+            return res.status(500).json({ success: false, message: 'Fallo interno.' });
+        }
+        res.json({ success: true, message: 'Registrado con éxito.' });
+    });
 });
 
 app.post('/login', (req, res) => {
-  const { email, password } = req.body;
-  db.get('SELECT * FROM users WHERE email = ? AND password = ?', [email, password], (err, user) => {
-    if (!user) return res.json({ success: false, error: 'Credenciales incorrectas.' });
-    res.json({ success: true, id: user.id, email: user.email, role: user.role });
-  });
-});
+    const { correo, contrasena } = req.body;
 
-app.get('/books', (req, res) => {
-  db.all('SELECT * FROM books', [], (err, rows) => {
-    if (err) return res.json([]);
-    res.json(rows || []);
-  });
-});
-
-app.post('/books', (req, res) => {
-  const { title, author, category, price, image, full_link, badge } = req.body;
-  const numericPrice = parseFloat(price) || 0.0;
-  db.run('INSERT INTO books (title, author, category, price, image, full_link, badge) VALUES (?, ?, ?, ?, ?, ?, ?)', 
-    [title, author, category, numericPrice, image, full_link, badge], function(err) {
-      if (err) return res.json({ success: false, error: err.message });
-      res.json({ success: true });
-  });
-});
-
-app.put('/books/:id', (req, res) => {
-  const { title, author, category, price, image, full_link, badge } = req.body;
-  const bookId = req.params.id;
-  const numericPrice = parseFloat(price) || 0.0;
-
-  const query = `UPDATE books SET title = ?, author = ?, category = ?, price = ?, image = ?, full_link = ?, badge = ? WHERE id = ?`;
-  db.run(query, [title, author, category, numericPrice, image, full_link, badge, bookId], function(err) {
-    if (err) return res.json({ success: false, error: err.message });
-    res.json({ success: true });
-  });
-});
-
-app.delete('/books/:id', (req, res) => {
-  db.run('DELETE FROM books WHERE id = ?', [req.params.id], function(err) {
-    if (err) return res.json({ success: false });
-    res.json({ success: true });
-  });
-});
-
-app.get('/cart/:userId', (req, res) => {
-  const query = `SELECT cart.id as cartItemId, books.id as bookId, books.title, books.price, books.image, cart.quantity 
-                 FROM cart JOIN books ON cart.book_id = books.id WHERE cart.user_id = ?`;
-  db.all(query, [req.params.userId], (err, rows) => {
-    if (err) return res.json([]);
-    res.json(rows || []);
-  });
-});
-
-app.post('/cart', (req, res) => {
-  const { userId, bookId } = req.body;
-  db.get('SELECT * FROM cart WHERE user_id = ? AND book_id = ?', [userId, bookId], (err, row) => {
-    if (row) {
-      db.run('UPDATE cart SET quantity = quantity + 1 WHERE id = ?', [row.id], () => res.json({ success: true }));
-    } else {
-      db.run('INSERT INTO cart (user_id, book_id) VALUES (?, ?)', [userId, bookId], () => res.json({ success: true }));
+    if (!correo || !contrasena) {
+        return res.status(400).json({ success: false, message: 'Completa los parámetros.' });
     }
-  });
-});
 
-app.delete('/cart/:cartItemId', (req, res) => {
-  db.run('DELETE FROM cart WHERE id = ?', [req.params.cartItemId], () => res.json({ success: true }));
-});
-
-app.post('/checkout', (req, res) => {
-  const { userId, userEmail, total } = req.body;
-  const dateStr = new Date().toLocaleString('es-GT', { timeZone: 'America/Guatemala' });
-
-  db.serialize(() => {
-    const cartQuery = `SELECT books.title, books.price, cart.quantity FROM cart 
-                       JOIN books ON cart.book_id = books.id WHERE cart.user_id = ?`;
-    
-    db.all(cartQuery, [userId], (err, items) => {
-      if (err || !items || items.length === 0) return res.json({ success: false, error: 'Vacío' });
-
-      db.run('INSERT INTO orders (user_id, user_email, total, date) VALUES (?, ?, ?, ?)', 
-        [userId, userEmail, total, dateStr], function(err) {
-          if (err) return res.json({ success: false });
-          const orderId = this.lastID;
-
-          const stmt = db.prepare('INSERT INTO order_items (order_id, book_title, price, quantity) VALUES (?, ?, ?, ?)');
-          items.forEach(item => {
-            stmt.run(orderId, item.title, item.price, item.quantity);
-          });
-          stmt.finalize();
-
-          db.run('DELETE FROM cart WHERE user_id = ?', [userId], () => {
-            res.json({ success: true });
-          });
-      });
+    const query = `SELECT * FROM usuarios WHERE correo = ? AND contrasena = ?`;
+    db.get(query, [correo, contrasena], (err, row) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: 'Error de servidor.' });
+        }
+        if (!row) {
+            return res.status(401).json({ success: false, message: 'Datos incorrectos.' });
+        }
+        res.json({
+            success: true,
+            message: 'Autenticado.',
+            user: { id: row.id, correo: row.correo, rol: row.rol }
+        });
     });
-  });
 });
 
-app.get('/users/:userId/purchased', (req, res) => {
-  const query = `SELECT DISTINCT order_items.book_title FROM order_items 
-                 JOIN orders ON order_items.order_id = orders.id 
-                 WHERE orders.user_id = ?`;
-  db.all(query, [req.params.userId], (err, rows) => {
-    if (err) return res.json([]);
-    const titles = rows.map(r => r.book_title);
-    res.json(titles);
-  });
+app.listen(PORT, () => {
+    console.log(`Servidor activo en puerto ${PORT}`);
 });
-
-app.get('/admin/sales', (req, res) => {
-  db.all('SELECT * FROM orders ORDER BY id DESC', [], (err, orders) => {
-    if (err) return res.json([]);
-    res.json(orders || []);
-  });
-});
-
-app.delete('/admin/sales', (req, res) => {
-  db.serialize(() => {
-    db.run('DELETE FROM order_items', [], (err) => {
-      db.run('DELETE FROM orders', [], function(err) {
-        res.json({ success: true });
-      });
-    });
-  });
-});
-
-app.delete('/admin/sales/:id', (req, res) => {
-  const orderId = req.params.id;
-  db.serialize(() => {
-    db.run('DELETE FROM order_items WHERE order_id = ?', [orderId], () => {
-      db.run('DELETE FROM orders WHERE id = ?', [orderId], () => {
-        res.json({ success: true });
-      });
-    });
-  });
-});
-
-app.listen(PORT, () => console.log(`Servidor ejecutándose en http://localhost:${PORT}`));
