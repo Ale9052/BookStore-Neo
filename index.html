@@ -6,98 +6,109 @@
   <title>BookStore Neo</title>
   <style>
     :root {
-      --bg-dark: #0f172a;
-      --bg-card: #1e293b;
+      --bg-main: #0b0f19;
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
       --neon-cyan: #06b6d4;
-      --neon-green: #10b981;
       --neon-pink: #ec4899;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
+      --neon-green: #10b981;
     }
     body {
-      background-color: var(--bg-dark);
+      background: var(--bg-main);
       color: var(--text-main);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
       padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     .hidden { display: none !important; }
     .glass {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(12px);
       border-radius: 12px;
-      padding: 20px;
+      padding: 25px;
     }
-    .auth-wrapper {
+    .auth-box {
+      width: 100%;
       max-width: 400px;
-      margin: 60px auto;
+      margin-top: 50px;
     }
-    .auth-box h2 { text-align: center; color: var(--neon-cyan); }
-    .input-group { margin-bottom: 15px; }
-    .input-group label { display: block; margin-bottom: 5px; color: var(--text-muted); }
-    .input-group input, .input-group select {
-      width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #334155;
-      background: #0f172a; color: white; box-sizing: border-box;
+    .input-group {
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
     }
-    .password-wrapper { display: flex; gap: 5px; }
-    .toggle-password { background: #334155; border: none; color: white; padding: 10px; border-radius: 6px; cursor: pointer; }
-    .btn-auth, .btn-card, .btn-action {
-      width: 100%; padding: 12px; background: var(--neon-cyan); border: none;
-      color: var(--bg-dark); font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px;
+    .input-group label {
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: var(--text-muted);
     }
-    .btn-auth:hover { background: #22d3ee; }
-    .auth-switch { text-align: center; margin-top: 15px; font-size: 14px; color: var(--text-muted); }
+    .input-group input {
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--glass-border);
+      color: white;
+      padding: 10px;
+      border-radius: 6px;
+    }
+    .password-wrapper {
+      display: flex;
+      gap: 5px;
+    }
+    .password-wrapper input { flex: 1; }
+    .toggle-password {
+      background: none;
+      border: 1px solid var(--glass-border);
+      color: white;
+      cursor: pointer;
+      border-radius: 6px;
+      padding: 0 10px;
+    }
+    .btn-auth, .btn-card {
+      background: var(--neon-cyan);
+      color: black;
+      border: none;
+      padding: 10px;
+      width: 100%;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .auth-switch {
+      text-align: center;
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 15px;
+    }
     .auth-switch a { color: var(--neon-cyan); text-decoration: none; }
-    
-    header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid #334155; }
-    .search-container { margin: 20px 0; text-align: center; }
-    .search-container input { width: 60%; padding: 12px; border-radius: 8px; border: 1px solid var(--neon-cyan); background: #1e293b; color: white; }
-    
-    .categories-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-    .btn-category { padding: 8px 16px; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 20px; cursor: pointer; }
-    .btn-category.active { background: var(--neon-cyan); color: var(--bg-dark); font-weight: bold; }
-
-    .books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
-    .book-card { display: flex; flex-direction: column; justify-content: space-between; position: relative; }
-    .book-cover-wrapper { position: relative; text-align: center; }
-    .book-cover { width: 150px; height: 220px; object-fit: cover; border-radius: 6px; }
-    .book-badge { position: absolute; top: 10px; right: 10px; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; }
-    .badge-cyan { background: var(--neon-cyan); color: black; }
-    .badge-pink { background: var(--neon-pink); color: white; }
-    .badge-green { background: var(--neon-green); color: white; }
-    .book-info { margin-top: 10px; }
-    .book-category-tag { font-size: 12px; color: var(--neon-cyan); text-transform: uppercase; }
-    .book-title-h3 { margin: 5px 0; font-size: 16px; }
-    .book-author-p { font-size: 14px; color: var(--text-muted); margin: 0 0 10px 0; }
-    .book-footer-row { display: flex; justify-content: space-between; align-items: center; }
-    .book-price { font-weight: bold; color: var(--neon-green); }
-    .owned-indicator { font-size: 12px; color: var(--neon-green); }
-    .btn-read { background: var(--neon-green) !important; color: white !important; text-align: center; text-decoration: none; display: block; box-sizing: border-box; }
-
-    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 100; }
-    .modal-content { width: 90%; max-width: 600px; max-height: 80%; overflow-y: auto; }
-    .cart-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    .cart-table th, .cart-table td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; }
-    .cart-qty-controls { display: flex; gap: 5px; align-items: center; }
-    .cart-qty-controls button { background: #334155; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; }
-    .btn-remove-item { background: transparent; border: none; cursor: pointer; }
-
-    .admin-box { margin-top: 40px; border-top: 2px dashed var(--neon-pink); padding-top: 20px; }
-    .admin-split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    @media (max-width: 768px) { .admin-split { grid-template-columns: 1fr; } }
-    .sales-table { width: 100%; border-collapse: collapse; }
-    .sales-table th, .sales-table td { padding: 10px; border-bottom: 1px solid #334155; font-size: 14px; }
-    .btn-mini-delete { background: transparent; border: none; cursor: pointer; }
-    .admin-card-actions { display: flex; gap: 5px; margin-top: 10px; }
-    .btn-card-edit { background: #eab308; color: black; border: none; padding: 5px; width: 50%; cursor: pointer; font-weight: bold; border-radius: 4px; }
-    .btn-card-delete { background: #ef4444; color: white; border: none; padding: 5px; width: 50%; cursor: pointer; font-weight: bold; border-radius: 4px; }
+    header {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    #booksContainer {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 1200px;
+    }
+    .book-card { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .book-cover { width: 100%; height: 260px; object-fit: cover; border-radius: 8px; }
   </style>
 </head>
 <body>
 
-  <div id="auth-section" class="auth-wrapper glass">
-    <div id="login-box" class="auth-box">
+  <div id="auth-section">
+    <div id="login-box" class="auth-box glass">
       <h2>Iniciar Sesión</h2>
       <form id="loginForm">
         <div class="input-group">
@@ -116,7 +127,7 @@
       <p class="auth-switch">¿No tienes cuenta? <a href="#" id="showRegister">Regístrate aquí</a></p>
     </div>
 
-    <div id="register-box" class="auth-box hidden">
+    <div id="register-box" class="auth-box glass hidden">
       <h2>Crear Cuenta</h2>
       <form id="registerForm">
         <div class="input-group">
@@ -136,129 +147,51 @@
     </div>
   </div>
 
-  <div id="app-content" class="hidden">
+  <div id="app-content" class="hidden" style="width:100%; max-width:1200px;">
     <header>
-      <h1 style="color: var(--neon-cyan); margin: 0;">📚 BookStore Neo</h1>
-      <div style="display: flex; align-items: center; gap: 15px;">
-        <span id="userGreeting" class="hidden" style="font-weight: bold;"></span>
-        <button id="viewCartBtn" style="padding: 8px 16px; background: #1e293b; color: white; border: 1px solid var(--neon-cyan); border-radius: 6px; cursor: pointer;">
-          🛒 Carrito (<span id="cartCount">0</span>)
-        </button>
-        <button id="logoutBtn" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer;">Cerrar Sesión</button>
+      <h1 id="userGreeting">Hola</h1>
+      <div>
+        <button id="viewCartBtn" style="background:var(--neon-green); border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">🛒 Carrito (<span id="cartCount">0</span>)</button>
+        <button id="logoutBtn" style="background:var(--neon-pink); border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold; color:white; margin-left:10px;">Salir</button>
       </div>
     </header>
 
-    <div id="search-wrapper" class="search-container hidden">
-      <input type="text" id="bookSearchInput" placeholder="Buscar por título o autor...">
+    <div id="search-wrapper" style="margin-bottom: 20px;">
+      <input type="text" id="bookSearchInput" placeholder="Buscar por título o autor..." style="width:100%; padding:12px; border-radius:6px; border:1px solid var(--glass-border); background:rgba(0,0,0,0.3); color:white;">
     </div>
 
-    <div class="categories-bar">
-      <button class="btn-category active" data-category="Todos">Todos</button>
-      <button class="btn-category" data-category="Ingeniería">Ingeniería</button>
-      <button class="btn-category" data-category="Literatura">Literatura</button>
-      <button class="btn-category" data-category="Ciencia">Ciencia</button>
-    </div>
+    <div id="booksContainer"></div>
+    <p id="noResultsMessage" class="hidden" style="color:var(--text-muted); text-align:center; margin-top:4px;">No se encontraron libros.</p>
 
-    <div id="noResultsMessage" class="hidden" style="text-align: center; color: var(--text-muted); padding: 4px;">No se encontraron libros que coincidan.</div>
-    <div id="booksContainer" class="books-grid"></div>
-
-    <div id="cart-modal" class="modal hidden">
-      <div class="modal-content glass">
-        <h2>Tu Carrito de Compras</h2>
-        <table class="cart-table">
-          <thead>
-            <tr>
-              <th>Libro</th>
-              <th>Cantidad</th>
-              <th>Subtotal</th>
-              <th>Eliminar</th>
-            </tr>
-          </thead>
-          <tbody id="cartTableBody"></tbody>
-        </table>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-          <h3>Total: <span id="cartTotalElement" style="color: var(--neon-green);">Q0.00</span></h3>
-          <div style="display: flex; gap: 10px;">
-            <button id="closeCartBtn" style="padding: 10px 20px; background: #334155; border: none; color: white; border-radius: 6px; cursor: pointer;">Cerrar</button>
-            <button id="checkoutBtn" style="padding: 10px 20px; background: var(--neon-green); border: none; color: white; font-weight: bold; border-radius: 6px; cursor: pointer;">Procesar Compra</button>
-          </div>
+    <div id="admin-section" class="glass hidden" style="margin-top:4px;">
+      <h2 id="formTitleHeader">➕ Agregar Nuevo Libro</h2>
+      <form id="adminBookForm">
+        <input type="hidden" id="adminBookId">
+        <div class="input-group"><label>Título</label><input type="text" id="adminTitle" required></div>
+        <div class="input-group"><label>Autor</label><input type="text" id="adminAuthor" required></div>
+        <div class="input-group">
+          <label>Categoría</label>
+          <select id="adminCategory" style="padding:10px; background:black; color:white; border-radius:6px;">
+            <option value="Ingeniería">Ingeniería</option>
+            <option value="Fantasía">Fantasía</option>
+            <option value="Educación">Educación</option>
+          </select>
         </div>
-      </div>
-    </div>
-
-    <div id="admin-section" class="admin-box hidden">
-      <h2 style="color: var(--neon-pink);">⚙ Panel de Control del Administrador</h2>
-      <div class="admin-split">
-        
-        <div class="glass">
-          <h3 id="formTitleHeader">➕ Agregar Nuevo Libro</h3>
-          <form id="adminBookForm">
-            <input type="hidden" id="adminBookId">
-            <div class="input-group">
-              <label>Título</label>
-              <input type="text" id="adminTitle" required>
-            </div>
-            <div class="input-group">
-              <label>Autor</label>
-              <input type="text" id="adminAuthor" required>
-            </div>
-            <div class="input-group">
-              <label>Categoría</label>
-              <select id="adminCategory">
-                <option value="Ingeniería">Ingeniería</option>
-                <option value="Literatura">Literatura</option>
-                <option value="Ciencia">Ciencia</option>
-              </select>
-            </div>
-            <div class="input-group">
-              <label>Precio (Q)</label>
-              <input type="number" id="adminPrice" step="0.01" required>
-            </div>
-            <div class="input-group">
-              <label>URL de la Imagen Cover</label>
-              <input type="url" id="adminImage" required>
-            </div>
-            <div class="input-group">
-              <label>Enlace de Lectura Completo</label>
-              <input type="url" id="adminLink" required>
-            </div>
-            <div class="input-group">
-              <label>Etiqueta Especial</label>
-              <select id="adminBadge">
-                <option value="Ninguno">Ninguno</option>
-                <option value="Nuevo">Nuevo</option>
-                <option value="Tendencia">Tendencia</option>
-                <option value="Premium">Premium</option>
-              </select>
-            </div>
-            <button type="submit" id="btnSubmitBook" class="btn-auth" style="background: var(--neon-pink); color: white;">Publicar Libro</button>
-            <button type="button" id="btnCancelEdit" class="btn-auth hidden" style="background: #334155; color: white;">Cancelar Edición</button>
-          </form>
+        <div class="input-group"><label>Precio (Q)</label><input type="number" step="0.01" id="adminPrice" required></div>
+        <div class="input-group"><label>URL Imagen</label><input type="text" id="adminImage"></div>
+        <div class="input-group"><label>Enlace de Lectura</label><input type="text" id="adminLink"></div>
+        <div class="input-group">
+          <label>Etiqueta</label>
+          <select id="adminBadge" style="padding:10px; background:black; color:white; border-radius:6px;">
+            <option value="Ninguno">Ninguno</option>
+            <option value="Tendencia">Tendencia</option>
+            <option value="Premium">Premium</option>
+          </select>
         </div>
-
-        <div class="glass">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3>📈 Historial de Ventas</h3>
-            <button id="btnClearSalesLog" style="padding: 5px 10px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Vaciar Todo</button>
-          </div>
-          <table class="sales-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Usuario</th>
-                <th>Fecha</th>
-                <th>Total</th>
-                <th>Estado</th>
-                <th>Acción</th>
-              </tr>
-            </thead>
-            <tbody id="salesLogTableBody"></tbody>
-          </table>
-        </div>
-
-      </div>
+        <button type="submit" id="btnSubmitBook" class="btn-auth">Publicar Libro</button>
+        <button type="button" id="btnCancelEdit" class="btn-auth hidden" style="background:gray;">Cancelar</button>
+      </form>
     </div>
-
   </div>
 
   <script src="app.js"></script>
