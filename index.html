@@ -15,15 +15,19 @@
       --neon-pink: #ec4899;
       --neon-green: #10b981;
     }
+    * {
+      box-sizing: border-box;
+    }
     body {
       background: var(--bg-main);
       color: var(--text-main);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
-      padding: 20px;
+      padding: 15px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      min-height: 100vh;
     }
     .hidden { display: none !important; }
     .glass {
@@ -31,12 +35,16 @@
       border: 1px solid var(--glass-border);
       backdrop-filter: blur(12px);
       border-radius: 12px;
-      padding: 25px;
+      padding: 20px;
     }
     .auth-box {
       width: 100%;
-      max-width: 400px;
-      margin-top: 50px;
+      max-width: 420px;
+      margin-top: 40px;
+    }
+    h2 {
+      margin-top: 0;
+      text-align: center;
     }
     .input-group {
       margin-bottom: 15px;
@@ -44,16 +52,18 @@
       flex-direction: column;
     }
     .input-group label {
-      margin-bottom: 5px;
+      margin-bottom: 6px;
       font-size: 14px;
       color: var(--text-muted);
     }
-    .input-group input {
-      background: rgba(0,0,0,0.2);
+    .input-group input, .input-group select {
+      background: rgba(0,0,0,0.3);
       border: 1px solid var(--glass-border);
       color: white;
-      padding: 10px;
+      padding: 11px;
       border-radius: 6px;
+      font-size: 15px;
+      width: 100%;
     }
     .password-wrapper {
       display: flex;
@@ -66,18 +76,23 @@
       color: white;
       cursor: pointer;
       border-radius: 6px;
-      padding: 0 10px;
+      padding: 0 12px;
     }
     .btn-auth, .btn-card {
       background: var(--neon-cyan);
       color: black;
       border: none;
-      padding: 10px;
+      padding: 12px;
       width: 100%;
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
       margin-top: 10px;
+      font-size: 15px;
+      transition: background 0.2s;
+    }
+    .btn-auth:hover, .btn-card:hover {
+      background: #0ea5e9;
     }
     .auth-switch {
       text-align: center;
@@ -86,23 +101,102 @@
       margin-top: 15px;
     }
     .auth-switch a { color: var(--neon-cyan); text-decoration: none; }
+    
     header {
       width: 100%;
-      max-width: 1200px;
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
+      gap: 15px;
       align-items: center;
-      margin-bottom: 30px;
+      margin-bottom: 25px;
+      text-align: center;
     }
+    #userGreeting {
+      margin: 0;
+      font-size: 24px;
+    }
+    .header-buttons {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      justify-content: center;
+    }
+    .header-buttons button {
+      flex: 1;
+      max-width: 180px;
+      border: none;
+      padding: 11px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    #search-wrapper {
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    #bookSearchInput {
+      width: 100%;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid var(--glass-border);
+      background: rgba(0,0,0,0.3);
+      color: white;
+      font-size: 15px;
+    }
+
+    /* SISTEMA DE REJILLA RESPONSIVO PARA LOS LIBROS */
     #booksContainer {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: 1fr;
       gap: 20px;
       width: 100%;
-      max-width: 1200px;
     }
-    .book-card { display: flex; flex-direction: column; align-items: center; text-align: center; }
-    .book-cover { width: 100%; height: 260px; object-fit: cover; border-radius: 8px; }
+    .book-card { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      text-align: center; 
+    }
+    .book-cover { 
+      width: 100%; 
+      max-width: 180px; 
+      height: 250px; 
+      object-fit: cover; 
+      border-radius: 8px; 
+    }
+
+    /* CONSULTAS MEDIAS (MEDIA QUERIES) PARA TABLETS Y PC */
+    @media (min-width: 550px) {
+      #booksContainer {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      header {
+        flex-direction: row;
+        justify-content: space-between;
+        text-align: left;
+      }
+      .header-buttons {
+        width: auto;
+        justify-content: flex-end;
+      }
+    }
+
+    @media (min-width: 850px) {
+      #booksContainer {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      body {
+        padding: 30px;
+      }
+    }
+
+    @media (min-width: 1100px) {
+      #booksContainer {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
   </style>
 </head>
 <body>
@@ -113,12 +207,12 @@
       <form id="loginForm">
         <div class="input-group">
           <label>Correo Electrónico</label>
-          <input type="email" id="loginEmail" required>
+          <input type="email" id="loginEmail" placeholder="correo@ejemplo.com" required>
         </div>
         <div class="input-group">
           <label>Contraseña</label>
           <div class="password-wrapper">
-            <input type="password" id="loginPassword" required>
+            <input type="password" id="loginPassword" placeholder="Tu contraseña" required>
             <button type="button" class="toggle-password" data-target="loginPassword">👁️</button>
           </div>
         </div>
@@ -131,13 +225,17 @@
       <h2>Crear Cuenta</h2>
       <form id="registerForm">
         <div class="input-group">
+          <label>Nombre Completo o de Usuario</label>
+          <input type="text" id="registerName" placeholder="Ej. Christopher Ramírez" required>
+        </div>
+        <div class="input-group">
           <label>Correo Electrónico</label>
-          <input type="email" id="registerEmail" required>
+          <input type="email" id="registerEmail" placeholder="correo@ejemplo.com" required>
         </div>
         <div class="input-group">
           <label>Contraseña</label>
           <div class="password-wrapper">
-            <input type="password" id="registerPassword" required>
+            <input type="password" id="registerPassword" placeholder="Crea una contraseña" required>
             <button type="button" class="toggle-password" data-target="registerPassword">👁️</button>
           </div>
         </div>
@@ -150,20 +248,20 @@
   <div id="app-content" class="hidden" style="width:100%; max-width:1200px;">
     <header>
       <h1 id="userGreeting">Hola</h1>
-      <div>
-        <button id="viewCartBtn" style="background:var(--neon-green); border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">🛒 Carrito (<span id="cartCount">0</span>)</button>
-        <button id="logoutBtn" style="background:var(--neon-pink); border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold; color:white; margin-left:10px;">Salir</button>
+      <div class="header-buttons">
+        <button id="viewCartBtn" style="background:var(--neon-green); color:black;">🛒 Carrito (<span id="cartCount">0</span>)</button>
+        <button id="logoutBtn" style="background:var(--neon-pink); color:white;">Salir</button>
       </div>
     </header>
 
-    <div id="search-wrapper" style="margin-bottom: 20px;">
-      <input type="text" id="bookSearchInput" placeholder="Buscar por título o autor..." style="width:100%; padding:12px; border-radius:6px; border:1px solid var(--glass-border); background:rgba(0,0,0,0.3); color:white;">
+    <div id="search-wrapper">
+      <input type="text" id="bookSearchInput" placeholder="Buscar por título o autor...">
     </div>
 
     <div id="booksContainer"></div>
-    <p id="noResultsMessage" class="hidden" style="color:var(--text-muted); text-align:center; margin-top:4px;">No se encontraron libros.</p>
+    <p id="noResultsMessage" class="hidden" style="color:var(--text-muted); text-align:center; margin-top:20px;">No se encontraron libros.</p>
 
-    <div id="admin-section" class="glass hidden" style="margin-top:4px;">
+    <div id="admin-section" class="glass hidden" style="margin-top:30px;">
       <h2 id="formTitleHeader">➕ Agregar Nuevo Libro</h2>
       <form id="adminBookForm">
         <input type="hidden" id="adminBookId">
@@ -171,7 +269,7 @@
         <div class="input-group"><label>Autor</label><input type="text" id="adminAuthor" required></div>
         <div class="input-group">
           <label>Categoría</label>
-          <select id="adminCategory" style="padding:10px; background:black; color:white; border-radius:6px;">
+          <select id="adminCategory">
             <option value="Ingeniería">Ingeniería</option>
             <option value="Fantasía">Fantasía</option>
             <option value="Educación">Educación</option>
@@ -182,14 +280,14 @@
         <div class="input-group"><label>Enlace de Lectura</label><input type="text" id="adminLink"></div>
         <div class="input-group">
           <label>Etiqueta</label>
-          <select id="adminBadge" style="padding:10px; background:black; color:white; border-radius:6px;">
+          <select id="adminBadge">
             <option value="Ninguno">Ninguno</option>
             <option value="Tendencia">Tendencia</option>
             <option value="Premium">Premium</option>
           </select>
         </div>
         <button type="submit" id="btnSubmitBook" class="btn-auth">Publicar Libro</button>
-        <button type="button" id="btnCancelEdit" class="btn-auth hidden" style="background:gray;">Cancelar</button>
+        <button type="button" id="btnCancelEdit" class="btn-auth hidden" style="background:gray; color:white;">Cancelar</button>
       </form>
     </div>
   </div>
