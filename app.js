@@ -1,4 +1,4 @@
-const API_URL = "https://bookstore-neo.onrender.com";
+const API_URL = window.location.origin;
 let allBooksLocal = [];
 let purchasedBooksLocal = [];
 
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // EVENTO DE LOGIN (BLINDADO)
+  // EVENTO DE LOGIN
   const loginForm = document.getElementById('loginForm');
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
           localStorage.setItem('userId', data.userId);
           localStorage.setItem('userEmail', email);
           localStorage.setItem('userRole', data.role);
+          localStorage.setItem('userName', data.name);
           checkSession();
         } else {
           alert(data.message || 'Credenciales incorrectas.');
@@ -82,11 +83,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // EVENTO DE REGISTRO (BLINDADO)
+  // EVENTO DE REGISTRO
   const registerForm = document.getElementById('registerForm');
   if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const name = document.getElementById('registerName').value.trim();
       const email = document.getElementById('registerEmail').value.trim();
       const password = document.getElementById('registerPassword').value.trim();
 
@@ -94,13 +96,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await fetch(`${API_URL}/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ name, email, password })
         });
         const data = await res.json();
         if (data.success) {
-          alert('¡Registro exitoso! Ya puedes iniciar sesión.');
+          alert('¡Registro exitoso! Ya puedes iniciar sesión con tus credenciales.');
           document.getElementById('register-box').classList.add('hidden');
           document.getElementById('login-box').classList.remove('hidden');
+          registerForm.reset();
         } else {
           alert(data.message || 'Error al registrar.');
         }
@@ -239,8 +242,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function checkSession() {
   const userId = localStorage.getItem('userId');
-  const userEmail = localStorage.getItem('userEmail');
   const userRole = localStorage.getItem('userRole');
+  const userName = localStorage.getItem('userName');
 
   const authSection = document.getElementById('auth-section');
   const appContent = document.getElementById('app-content');
@@ -257,7 +260,8 @@ function checkSession() {
     if (searchWrapper) searchWrapper.classList.remove('hidden');
 
     if (greeting) {
-      greeting.textContent = `Hola, ${userEmail.split('@')[0]}`;
+      // Usar el nombre guardado en vez del correo electrónico
+      greeting.textContent = `Hola, ${userName || 'Usuario'}`;
       greeting.classList.remove('hidden');
     }
 
@@ -274,7 +278,7 @@ function checkSession() {
     loadCatalog();
   } else {
     if (authSection) authSection.classList.remove('hidden');
-    if (appContent) appContent.classList.add('hidden');
+    if (appContent) appContent.add ? appContent.classList.add('hidden') : appContent.setAttribute('class', 'hidden');
     if (logoutBtn) logoutBtn.classList.add('hidden');
     if (greeting) greeting.classList.add('hidden');
     if (viewCartBtn) viewCartBtn.classList.add('hidden');
