@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         res = await fetch(`${API_URL}/books/${bookId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(bookData)
+          body: JSON.stringify({ bookData })
         });
       } else {
         res = await fetch(`${API_URL}/books`, {
@@ -290,7 +290,7 @@ function renderBooks(booksList) {
       let badgeClass = 'badge-cyan';
       if (book.badge === 'Tendencia') badgeClass = 'badge-pink';
       if (book.badge === 'Premium') badgeClass = 'badge-green';
-      badgeHTML = `<span class=\"book-badge ${badgeClass}\">${book.badge}</span>`;
+      badgeHTML = `<span class="book-badge ${badgeClass}">${book.badge}</span>`;
     }
 
     const isPurchased = purchasedBooksLocal.includes(book.title);
@@ -298,31 +298,31 @@ function renderBooks(booksList) {
 
     if (userRole === 'admin') {
       actionButtonHTML = `
-        <div class=\"admin-card-actions\">
-          <button class=\"btn-card-edit\" onclick=\"editBook(${book.id})\">📝 Editar</button>
-          <button class=\"btn-card-delete\" onclick=\"deleteBook(${book.id})\">🗑️ Borrar</button>
+        <div class="admin-card-actions">
+          <button class="btn-card-edit" onclick="editBook(${book.id})">📝 Editar</button>
+          <button class="btn-card-delete" onclick="deleteBook(${book.id})">🗑️ Borrar</button>
         </div>
       `;
     } else {
       if (isPurchased) {
-        actionButtonHTML = `<a href=\"${book.full_link || '#'}\" target=\"_blank\" class=\"btn-card btn-read\">📖 Leer Libro Digital</a>`;
+        actionButtonHTML = `<a href="${book.full_link || '#'}" target="_blank" class="btn-card btn-read">📖 Leer Libro Digital</a>`;
       } else {
-        actionButtonHTML = `<button class=\"btn-card\" onclick=\"addToCart(${book.id})\">🛒 Añadir al Carrito</button>`;
+        actionButtonHTML = `<button class="btn-card" onclick="addToCart(${book.id})">🛒 Añadir al Carrito</button>`;
       }
     }
 
     card.innerHTML = `
-      <div class=\"book-cover-wrapper\">
-        <img src=\"${book.image || 'https://via.placeholder.com/150x220'}\" alt=\"${book.title}\" class=\"book-cover\">
+      <div class="book-cover-wrapper">
+        <img src="${book.image || 'https://via.placeholder.com/150x220'}" alt="${book.title}" class="book-cover">
         ${badgeHTML}
       </div>
-      <div class=\"book-info\">
-        <span class=\"book-category-tag\">${book.category}</span>
-        <h3 class=\"book-title-h3\">${book.title}</h3>
-        <p class=\"book-author-p\">Por: ${book.author}</p>
-        <div class=\"book-footer-row\">
-          <span class=\"book-price\">Q${book.price.toFixed(2)}</span>
-          ${userRole !== 'admin' && isPurchased ? '<span class=\"owned-indicator\">✔ Adquirido</span>' : ''}
+      <div class="book-info">
+        <span class="book-category-tag">${book.category}</span>
+        <h3 class="book-title-h3">${book.title}</h3>
+        <p class="book-author-p">Por: ${book.author}</p>
+        <div class="book-footer-row">
+          <span class="book-price">Q${book.price.toFixed(2)}</span>
+          ${userRole !== 'admin' && isPurchased ? '<span class="owned-indicator">✔ Adquirido</span>' : ''}
         </div>
         ${actionButtonHTML}
       </div>
@@ -391,7 +391,7 @@ async function loadCart() {
     let totalSum = 0;
 
     if (items.length === 0) {
-      tbody.innerHTML = `<tr><td colspan=\"4\" style=\"text-align:center; color:var(--text-muted); padding:30px;\">Tu carrito está vacío 🛒</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:30px;">Tu carrito está vacío 🛒</td></tr>`;
       document.getElementById('cartTotalElement').textContent = 'Q0.00';
       return;
     }
@@ -403,23 +403,23 @@ async function loadCart() {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>
-          <div style=\"display:flex; align-items:center; gap:10px;\">
-            <img src=\"${item.image}\" style=\"width:35px; height:50px; border-radius:4px; object-fit:cover;\">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <img src="${item.image}" style="width:35px; height:50px; border-radius:4px; object-fit:cover;">
             <div>
               <strong>${item.title}</strong><br>
-              <span style=\"font-size:12px; color:var(--text-muted);\">Q${item.price.toFixed(2)} c/u</span>
+              <span style="font-size:12px; color:var(--text-muted);">Q${item.price.toFixed(2)} c/u</span>
             </div>
           </div>
         </td>
         <td>
-          <div class=\"cart-qty-controls\">
-            <button onclick=\"changeQty(${item.cartItemId}, ${item.quantity - 1})\">-</button>
+          <div class="cart-qty-controls">
+            <button onclick="changeQty(${item.cartItemId}, ${item.quantity - 1})">-</button>
             <span>${item.quantity}</span>
-            <button onclick=\"changeQty(${item.cartItemId}, ${item.quantity + 1})\">+</button>
+            <button onclick="changeQty(${item.cartItemId}, ${item.quantity + 1})">+</button>
           </div>
         </td>
-        <td style=\"color:var(--neon-green); font-weight:700;\">Q${subtotal.toFixed(2)}</td>
-        <td><button class=\"btn-remove-item\" onclick=\"removeCartItem(${item.cartItemId})\">❌</button></td>
+        <td style="color:var(--neon-green); font-weight:700;">Q${subtotal.toFixed(2)}</td>
+        <td><button class="btn-remove-item" onclick="removeCartItem(${item.cartItemId})">❌</button></td>
       `;
       tbody.appendChild(tr);
     });
@@ -521,7 +521,7 @@ function renderAdminSales(salesList) {
   tbody.innerHTML = '';
 
   if (salesList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan=\"6\" style=\"text-align:center; color:var(--text-muted); padding:20px;\">No se registran transacciones aún.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">No se registran transacciones aún.</td></tr>`;
     return;
   }
 
@@ -534,10 +534,10 @@ function renderAdminSales(salesList) {
       <td><strong>#${sale.id}</strong></td>
       <td>${sale.user_email}</td>
       <td>${sale.date}</td>
-      <td style=\"color:var(--neon-cyan); font-weight:700;\">Q${sale.total.toFixed(2)}</td>
-      <td><span style=\"background:rgba(16,185,129,0.15); color:var(--neon-green); padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700; border:1px solid rgba(16,185,129,0.3)\">${sale.status}</span></td>
-      <td style=\"text-align:center;\">
-        <button class=\"btn-mini-delete\" title=\"Eliminar esta venta\">🗑️</button>
+      <td style="color:var(--neon-cyan); font-weight:700;">Q${sale.total.toFixed(2)}</td>
+      <td><span style="background:rgba(16,185,129,0.15); color:var(--neon-green); padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700; border:1px solid rgba(16,185,129,0.3)">${sale.status}</span></td>
+      <td style="text-align:center;">
+        <button class="btn-mini-delete" title="Eliminar esta venta">🗑️</button>
       </td>
     `;
 
