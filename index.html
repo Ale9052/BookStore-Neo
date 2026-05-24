@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BookStore Neo - Librería Virtual Premium</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+
+  <header>
+    <div class="logo">BookStore<span class="neon-dot">.</span></div>
+    
+    <div id="search-wrapper" class="search-container hidden">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="bookSearchInput" placeholder="Buscar tu próxima lectura por título o autor...">
+    </div>
+
+    <nav>
+      <span id="userGreeting" class="user-greeting hidden"></span>
+      <button id="viewCartBtn" class="btn-nav hidden">
+        <span>🛒</span> Mi Carrito <span id="cartCount" class="badge">0</span>
+      </button>
+    </nav>
+    <button id="logoutBtn" class="btn-logout hidden">Cerrar Sesión</button>
+  </header>
+
+  <main>
+    <section id="auth-section" class="auth-container">
+      <div class="form-box glass" id="login-box">
+        <h2>Bienvenido de nuevo</h2>
+        <p class="subtitle">Ingresa con tu cuenta verídica de Gmail</p>
+        <form id="loginForm">
+          <div class="input-group">
+            <label>Correo Electrónico</label>
+            <input type="email" id="loginEmail" placeholder="usuario@gmail.com" required>
+          </div>
+          <div class="input-group">
+            <label>Contraseña</label>
+            <div class="password-wrapper">
+              <input type="password" id="loginPassword" placeholder="••••••••" required>
+              <button type="button" class="toggle-password" data-target="loginPassword">👁️</button>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary">Iniciar Sesión</button>
+        </form>
+        <p class="auth-switch">¿Nuevo en la plataforma? <a href="#" id="showRegister">Crea una cuenta aquí</a></p>
+      </div>
+
+      <div class="form-box glass hidden" id="register-box">
+        <h2>Crear una cuenta</h2>
+        <p class="subtitle">Se verificará que introduzcas un correo @gmail.com real</p>
+        <form id="registerForm">
+          <div class="input-group">
+            <label>Correo Electrónico (Gmail)</label>
+            <input type="email" id="registerEmail" placeholder="ejemplo@gmail.com" required>
+          </div>
+          <div class="input-group">
+            <label>Contraseña de la plataforma (Mínimo 6 caracteres)</label>
+            <div class="password-wrapper">
+              <input type="password" id="registerPassword" placeholder="Mínimo 6 caracteres" minlength="6" required>
+              <button type="button" class="toggle-password" data-target="registerPassword">👁️</button>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary">Registrarse</button>
+        </form>
+        <p class="auth-switch">¿Ya tienes cuenta? <a href="#" id="showLogin">Inicia sesión</a></p>
+      </div>
+    </section>
+
+    <div id="shop-section" class="hidden">
+      
+      <section id="admin-section" class="container hidden">
+        <div class="admin-dashboard">
+          <div class="form-box glass admin-box" id="adminFormWrapper">
+            <h3 id="formAdminTitle">Añadir Nuevo Libro</h3>
+            <form id="bookForm">
+              <input type="hidden" id="editBookId">
+              <div class="input-group">
+                <label>Título del Libro</label>
+                <input type="text" id="bookTitle" placeholder="Ej: El Alquimista" required>
+              </div>
+              <div class="input-group">
+                <label>Autor</label>
+                <input type="text" id="bookAuthor" placeholder="Ej: Paulo Coelho" required>
+              </div>
+              <div class="input-group">
+                <label>Categoría</label>
+                <select id="bookCategory" class="custom-select" required>
+                  <option value="Programación">💻 Programación</option>
+                  <option value="Fantasía">🔮 Fantasía</option>
+                  <option value="Terror">👻 Terror</option>
+                  <option value="Superación">📈 Superación Personal</option>
+                  <option value="Ciencia Ficción">🚀 Ciencia Ficción</option>
+                  <option value="Matemática">📐 Matemática</option> <option value="Fantasía">🔮 Fantasía</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label>Precio (Q)</label>
+                <input type="text" id="bookPrice" placeholder="Ej: 85.00" required>
+              </div>
+              <div class="input-group">
+                <label>URL de la Portada</label>
+                <input type="text" id="bookImage" placeholder="https://..." required>
+              </div>
+              <div class="input-group">
+                <label>Enlace del Libro Completo (Solo Compradores/Admin)</label>
+                <input type="text" id="bookFullLink" placeholder="Ej: https://drive.google.com/.../view" required>
+              </div>
+              <div class="input-group">
+                <label>Etiqueta de Marketing Especial</label>
+                <select id="bookBadge" class="custom-select">
+                  <option value="">-- Sin Etiqueta --</option>
+                  <option value="🔥 Más Vendido">🔥 Más Vendido</option>
+                  <option value="⏳ Pocas Existencias">⏳ Pocas Existencias</option>
+                  <option value="✨ Nuevo">✨ Nuevo</option>
+                  <option value="⚡ Oferta Especial">⚡ Oferta Especial</option>
+                </select>
+              </div>
+              <div class="admin-buttons">
+                <button type="submit" id="btnAdminSubmit" class="btn-primary">Guardar en Inventario</button>
+                <button type="button" id="btnCancelEdit" class="btn-secondary hidden">Cancelar Edición</button>
+              </div>
+            </form>
+          </div>
+          
+          <div class="sales-box glass">
+            <div class="sales-header">
+              <div>
+                <h3>Historial de Ventas Globales</h3>
+                <small style="color: var(--text-muted); font-size: 11px;">💡 Tip: Doble clic en una fila para eliminar esa venta</small>
+              </div>
+              <button id="btnClearHistoryBtn" class="btn-card-delete" style="padding: 6px 14px; width: auto; margin-bottom: 0;">🗑️ Limpiar Historial</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID Orden</th>
+                    <th>Cliente</th>
+                    <th>Fecha y Hora</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th style="text-align: center;">Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="salesTableBody">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="cart-section" class="container hidden">
+        <div class="section-header">
+          <h2>Tu Carrito de Compras</h2>
+          <p>Revisa tus libros seleccionados antes de procesar tu pago cifrado</p>
+        </div>
+        <div class="cart-layout">
+          <div id="cartItemsContainer" class="cart-items-list">
+          </div>
+          <div class="cart-summary glass">
+            <h3>Resumen de orden</h3>
+            <div class="summary-row">
+              <span>Subtotal</span>
+              <span id="cartTotal">Q0.00</span>
+            </div>
+            <div class="summary-row">
+              <span>Envío</span>
+              <span id="shippingCost" class="text-neon-green">Gratis</span>
+            </div>
+            <div class="summary-row total">
+              <span>Total</span>
+              <span id="cartTotalFinal">Q0.00</span>
+            </div>
+            <button id="checkoutBtn" class="btn-primary btn-pay">Proceder al Pago Seguro 💳</button>
+            <button id="closeCartBtn" class="btn-secondary">Volver al Catálogo</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="catalogo-section" class="container">
+        <div class="section-header">
+          <h2>Explora Nuestro Catálogo</h2>
+          <p>Adquiere los títulos literarios más influyentes del planeta</p>
+        </div>
+
+        <div class="category-filter-bar">
+          <button class="btn-category active" data-category="Todos">🌐 Todos los libros</button>
+          <button class="btn-category" data-category="Programación">💻 Programación</button>
+          <button class="btn-category" data-category="Fantasía">🔮 Fantasía</button>
+          <button class="btn-category" data-category="Terror">👻 Terror</button>
+          <button class="btn-category" data-category="Superación">📈 Superación</button>
+          <button class="btn-category" data-category="Ciencia Ficción">🚀 Ciencia Ficción</button>
+        </div>
+        
+        <div id="noResultsMessage" class="no-results glass hidden">
+          😔 No encontramos libros en esta categoría o que coincidan con tu búsqueda.
+        </div>
+
+        <div id="booksContainer" class="books-grid"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 BookStore Neo. Desarrollado con tecnología de renderizado de alta fidelidad y seguridad SSL.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
