@@ -5,207 +5,236 @@ let purchasedBooksLocal = [];
 document.addEventListener('DOMContentLoaded', () => {
   checkSession();
 
-  document.getElementById('showRegister').addEventListener('click', (e) => {
-    e.preventDefault();
-    document.getElementById('login-box').classList.add('hidden');
-    document.getElementById('register-box').classList.remove('hidden');
-  });
+  // Cambio seguro entre cajas de autenticación
+  const showRegister = document.getElementById('showRegister');
+  if (showRegister) {
+    showRegister.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('login-box').classList.add('hidden');
+      document.getElementById('register-box').classList.remove('hidden');
+    });
+  }
 
-  document.getElementById('showLogin').addEventListener('click', (e) => {
-    e.preventDefault();
-    document.getElementById('register-box').classList.add('hidden');
-    document.getElementById('login-box').classList.remove('hidden');
-  });
+  const showLogin = document.getElementById('showLogin');
+  if (showLogin) {
+    showLogin.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('register-box').classList.add('hidden');
+      document.getElementById('login-box').classList.remove('hidden');
+    });
+  }
 
+  // Visibilidad de contraseñas
   const togglePasswordButtons = document.querySelectorAll('.toggle-password');
   togglePasswordButtons.forEach(button => {
     button.addEventListener('click', () => {
       const targetId = button.getAttribute('data-target');
       const passwordInput = document.getElementById(targetId);
-      passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
-      button.textContent = passwordInput.type === 'password' ? '👁️' : '🙈';
+      if (passwordInput) {
+        passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+        button.textContent = passwordInput.type === 'password' ? '👁️' : '🙈';
+      }
     });
   });
 
-  document.getElementById('bookSearchInput').addEventListener('input', (e) => {
-    filterBooks(e.target.value.toLowerCase().trim());
-  });
+  // Buscador de libros alternativo seguro
+  const bookSearchInput = document.getElementById('bookSearchInput');
+  if (bookSearchInput) {
+    bookSearchInput.addEventListener('input', (e) => {
+      filterBooks(e.target.value.toLowerCase().trim());
+    });
+  }
 
-  document.getElementById('btnCancelEdit').addEventListener('click', () => {
-    cancelBookEdit();
-  });
+  const btnCancelEdit = document.getElementById('btnCancelEdit');
+  if (btnCancelEdit) {
+    btnCancelEdit.addEventListener('click', () => {
+      cancelBookEdit();
+    });
+  }
 
-  document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
+  // EVENTO DE LOGIN (BLINDADO)
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
 
-    try {
-      const res = await fetch(`${API_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      if (data.success) {
-        localStorage.setItem('userId', data.userId);
-        localStorage.setItem('userEmail', email);
-        localStorage.setItem('userRole', data.role);
-        checkSession();
-      } else {
-        alert(data.message || 'Error al iniciar sesión.');
+      try {
+        const res = await fetch(`${API_URL}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('userId', data.userId);
+          localStorage.setItem('userEmail', email);
+          localStorage.setItem('userRole', data.role);
+          checkSession();
+        } else {
+          alert(data.message || 'Credenciales incorrectas.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error conectando al servidor.');
       }
-    } catch (err) {
-      console.error(err);
-      alert('Error en el servidor al intentar loguear.');
-    }
-  });
+    });
+  }
 
-  document.getElementById('registerForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('registerEmail').value.trim();
-    const password = document.getElementById('registerPassword').value.trim();
+  // EVENTO DE REGISTRO (BLINDADO)
+  const registerForm = document.getElementById('registerForm');
+  if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('registerEmail').value.trim();
+      const password = document.getElementById('registerPassword').value.trim();
 
-    try {
-      const res = await fetch(`${API_URL}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert('¡Registro exitoso! Ya puedes iniciar sesión.');
-        document.getElementById('register-box').classList.add('hidden');
-        document.getElementById('login-box').classList.remove('hidden');
-      } else {
-        alert(data.message || 'Error al registrar usuario.');
+      try {
+        const res = await fetch(`${API_URL}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('¡Registro exitoso! Ya puedes iniciar sesión.');
+          document.getElementById('register-box').classList.add('hidden');
+          document.getElementById('login-box').classList.remove('hidden');
+        } else {
+          alert(data.message || 'Error al registrar.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error en el servidor al registrar.');
       }
-    } catch (err) {
-      console.error(err);
-      alert('Error en el servidor al intentar registrar.');
-    }
-  });
+    });
+  }
 
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.clear();
-    window.location.reload();
-  });
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      localStorage.clear();
+      window.location.reload();
+    });
+  }
 
-  document.getElementById('viewCartBtn').addEventListener('click', () => {
-    document.getElementById('cart-modal').classList.remove('hidden');
-    loadCart();
-  });
+  const viewCartBtn = document.getElementById('viewCartBtn');
+  if (viewCartBtn) {
+    viewCartBtn.addEventListener('click', () => {
+      const modal = document.getElementById('cart-modal');
+      if (modal) modal.classList.remove('hidden');
+      loadCart();
+    });
+  }
 
-  document.getElementById('closeCartBtn').addEventListener('click', () => {
-    document.getElementById('cart-modal').classList.add('hidden');
-  });
+  const closeCartBtn = document.getElementById('closeCartBtn');
+  if (closeCartBtn) {
+    closeCartBtn.addEventListener('click', () => {
+      const modal = document.getElementById('cart-modal');
+      if (modal) modal.classList.add('hidden');
+    });
+  }
 
-  document.getElementById('checkoutBtn').addEventListener('click', async () => {
-    const userId = localStorage.getItem('userId');
-    const userEmail = localStorage.getItem('userEmail');
-    if (!userId) return;
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  if (checkoutBtn) {
+    checkoutBtn.addEventListener('click', async () => {
+      const userId = localStorage.getItem('userId');
+      const userEmail = localStorage.getItem('userEmail');
+      if (!userId) return;
 
-    try {
-      const resCart = await fetch(`${API_URL}/cart/${userId}`);
-      const cartItems = await resCart.json();
-      if (cartItems.length === 0) {
-        alert('El carrito está vacío.');
-        return;
+      try {
+        const resCart = await fetch(`${API_URL}/cart/${userId}`);
+        const cartItems = await resCart.json();
+        if (cartItems.length === 0) {
+          alert('El carrito está vacío.');
+          return;
+        }
+
+        let total = 0;
+        const items = cartItems.map(item => {
+          total += item.price * item.quantity;
+          return { title: item.title, quantity: item.quantity };
+        });
+
+        const resOrder = await fetch(`${API_URL}/orders`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, userEmail, total, items })
+        });
+        const orderData = await resOrder.json();
+
+        if (orderData.success) {
+          alert('🎉 ¡Compra procesada con éxito!');
+          const modal = document.getElementById('cart-modal');
+          if (modal) modal.classList.add('hidden');
+          updateCartBadge();
+          loadPurchasedBooks();
+        }
+      } catch (err) {
+        console.error(err);
       }
-
-      let total = 0;
-      const items = cartItems.map(item => {
-        total += item.price * item.quantity;
-        return { title: item.title, quantity: item.quantity };
-      });
-
-      const resOrder = await fetch(`${API_URL}/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, userEmail, total, items })
-      });
-      const orderData = await resOrder.json();
-
-      if (orderData.success) {
-        alert('🎉 ¡Compra procesada con éxito! Gracias por tu preferencia.');
-        document.getElementById('cart-modal').classList.add('hidden');
-        updateCartBadge();
-        loadPurchasedBooks();
-      } else {
-        alert('Error al procesar la orden.');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Error en el checkout.');
-    }
-  });
+    });
+  }
 
   const categoryButtons = document.querySelectorAll('.btn-category');
   categoryButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       categoryButtons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      document.getElementById('bookSearchInput').value = '';
+      const searchInput = document.getElementById('bookSearchInput');
+      if (searchInput) searchInput.value = '';
       filterBooks('');
     });
   });
 
-  document.getElementById('adminBookForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const bookId = document.getElementById('adminBookId').value;
-    const title = document.getElementById('adminTitle').value.trim();
-    const author = document.getElementById('adminAuthor').value.trim();
-    const category = document.getElementById('adminCategory').value;
-    const price = parseFloat(document.getElementById('adminPrice').value);
-    const image = document.getElementById('adminImage').value.trim();
-    const full_link = document.getElementById('adminLink').value.trim();
-    const badge = document.getElementById('adminBadge').value;
+  const adminBookForm = document.getElementById('adminBookForm');
+  if (adminBookForm) {
+    adminBookForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const bookId = document.getElementById('adminBookId').value;
+      const title = document.getElementById('adminTitle').value.trim();
+      const author = document.getElementById('adminAuthor').value.trim();
+      const category = document.getElementById('adminCategory').value;
+      const price = parseFloat(document.getElementById('adminPrice').value);
+      const image = document.getElementById('adminImage').value.trim();
+      const full_link = document.getElementById('adminLink').value.trim();
+      const badge = document.getElementById('adminBadge').value;
 
-    const bookData = { title, author, category, price, image, full_link, badge };
+      const bookData = { title, author, category, price, image, full_link, badge };
 
-    try {
-      let res;
-      if (bookId) {
-        res = await fetch(`${API_URL}/books/${bookId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(bookData)
-        });
-      } else {
-        res = await fetch(`${API_URL}/books`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(bookData)
-        });
+      try {
+        let res = bookId 
+          ? await fetch(`${API_URL}/books/${bookId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bookData) })
+          : await fetch(`${API_URL}/books`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bookData) });
+
+        const data = await res.json();
+        if (data.success) {
+          alert('Libro guardado con éxito.');
+          cancelBookEdit();
+          loadCatalog();
+        }
+      } catch (err) {
+        console.error(err);
       }
+    });
+  }
 
-      const data = await res.json();
-      if (data.success) {
-        alert(bookId ? 'Libro actualizado con éxito.' : 'Libro creado con éxito.');
-        cancelBookEdit();
-        loadCatalog();
-      } else {
-        alert('Error al guardar el libro.');
+  const btnClearSalesLog = document.getElementById('btnClearSalesLog');
+  if (btnClearSalesLog) {
+    btnClearSalesLog.addEventListener('click', async () => {
+      if (!confirm('¿Vaciar por completo el historial?')) return;
+      try {
+        const res = await fetch(`${API_URL}/admin/sales`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          loadAdminSales();
+        }
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
-      alert('Error en el servidor al guardar libro.');
-    }
-  });
-
-  document.getElementById('btnClearSalesLog').addEventListener('click', async () => {
-    if (!confirm('⚠ ¿Estás seguro de que deseas vaciar por completo el historial de ventas? Esta acción es irreversible.')) return;
-    try {
-      const res = await fetch(`${API_URL}/admin/sales`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        alert('Historial de ventas vaciado de manera segura.');
-        loadAdminSales();
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  });
+    });
+  }
 });
 
 function checkSession() {
@@ -213,47 +242,54 @@ function checkSession() {
   const userEmail = localStorage.getItem('userEmail');
   const userRole = localStorage.getItem('userRole');
 
-  if (userId) {
-    document.getElementById('auth-section').classList.add('hidden');
-    document.getElementById('app-content').classList.remove('hidden');
-    document.getElementById('logoutBtn').classList.remove('hidden');
-    document.getElementById('search-wrapper').classList.remove('hidden');
+  const authSection = document.getElementById('auth-section');
+  const appContent = document.getElementById('app-content');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const searchWrapper = document.getElementById('search-wrapper');
+  const greeting = document.getElementById('userGreeting');
+  const adminSection = document.getElementById('admin-section');
+  const viewCartBtn = document.getElementById('viewCartBtn');
 
-    const greeting = document.getElementById('userGreeting');
-    greeting.textContent = `Hola, ${userEmail.split('@')[0]}`;
-    greeting.classList.remove('hidden');
+  if (userId) {
+    if (authSection) authSection.classList.add('hidden');
+    if (appContent) appContent.classList.remove('hidden');
+    if (logoutBtn) logoutBtn.classList.remove('hidden');
+    if (searchWrapper) searchWrapper.classList.remove('hidden');
+
+    if (greeting) {
+      greeting.textContent = `Hola, ${userEmail.split('@')[0]}`;
+      greeting.classList.remove('hidden');
+    }
 
     if (userRole === 'admin') {
-      document.getElementById('admin-section').classList.remove('hidden');
-      document.getElementById('viewCartBtn').classList.add('hidden');
+      if (adminSection) adminSection.classList.remove('hidden');
+      if (viewCartBtn) viewCartBtn.classList.add('hidden');
       loadAdminSales();
     } else {
-      document.getElementById('admin-section').classList.add('hidden');
-      document.getElementById('viewCartBtn').classList.remove('hidden');
+      if (adminSection) adminSection.classList.add('hidden');
+      if (viewCartBtn) viewCartBtn.classList.remove('hidden');
       updateCartBadge();
       loadPurchasedBooks();
     }
-
     loadCatalog();
   } else {
-    document.getElementById('auth-section').classList.remove('hidden');
-    document.getElementById('app-content').classList.add('hidden');
-    document.getElementById('logoutBtn').classList.add('hidden');
-    document.getElementById('userGreeting').classList.add('hidden');
-    document.getElementById('viewCartBtn').classList.add('hidden');
-    document.getElementById('admin-section').classList.add('hidden');
-    document.getElementById('search-wrapper').classList.add('hidden');
+    if (authSection) authSection.classList.remove('hidden');
+    if (appContent) appContent.classList.add('hidden');
+    if (logoutBtn) logoutBtn.classList.add('hidden');
+    if (greeting) greeting.classList.add('hidden');
+    if (viewCartBtn) viewCartBtn.classList.add('hidden');
+    if (adminSection) adminSection.classList.add('hidden');
+    if (searchWrapper) searchWrapper.classList.add('hidden');
   }
 }
 
 async function loadCatalog() {
   try {
     const res = await fetch(`${API_URL}/books`);
-    const books = await res.json();
-    allBooksLocal = books;
-    renderBooks(books);
+    allBooksLocal = await res.json();
+    renderBooks(allBooksLocal);
   } catch (err) {
-    console.error('Error cargando el catálogo:', err);
+    console.error(err);
   }
 }
 
@@ -271,14 +307,16 @@ async function loadPurchasedBooks() {
 
 function renderBooks(booksList) {
   const container = document.getElementById('booksContainer');
+  if (!container) return;
   container.innerHTML = '';
   const userRole = localStorage.getItem('userRole');
 
+  const noResults = document.getElementById('noResultsMessage');
   if (booksList.length === 0) {
-    document.getElementById('noResultsMessage').classList.remove('hidden');
+    if (noResults) noResults.classList.remove('hidden');
     return;
   } else {
-    document.getElementById('noResultsMessage').classList.add('hidden');
+    if (noResults) noResults.classList.add('hidden');
   }
 
   booksList.forEach(book => {
@@ -287,29 +325,19 @@ function renderBooks(booksList) {
 
     let badgeHTML = '';
     if (book.badge && book.badge !== 'Ninguno') {
-      let badgeClass = 'badge-cyan';
-      if (book.badge === 'Tendencia') badgeClass = 'badge-pink';
-      if (book.badge === 'Premium') badgeClass = 'badge-green';
+      let badgeClass = book.badge === 'Tendencia' ? 'badge-pink' : (book.badge === 'Premium' ? 'badge-green' : 'badge-cyan');
       badgeHTML = `<span class="book-badge ${badgeClass}">${book.badge}</span>`;
     }
 
     const isPurchased = purchasedBooksLocal.includes(book.title);
-    let actionButtonHTML = '';
-
-    if (userRole === 'admin') {
-      actionButtonHTML = `
-        <div class="admin-card-actions">
+    let actionButtonHTML = userRole === 'admin' 
+      ? `<div class="admin-card-actions">
           <button class="btn-card-edit" onclick="editBook(${book.id})">📝 Editar</button>
           <button class="btn-card-delete" onclick="deleteBook(${book.id})">🗑️ Borrar</button>
-        </div>
-      `;
-    } else {
-      if (isPurchased) {
-        actionButtonHTML = `<a href="${book.full_link || '#'}" target="_blank" class="btn-card btn-read">📖 Leer Libro Digital</a>`;
-      } else {
-        actionButtonHTML = `<button class="btn-card" onclick="addToCart(${book.id})">🛒 Añadir al Carrito</button>`;
-      }
-    }
+         </div>`
+      : (isPurchased 
+          ? `<a href="${book.full_link || '#'}" target="_blank" class="btn-card btn-read">📖 Leer Libro Digital</a>`
+          : `<button class="btn-card" onclick="addToCart(${book.id})">🛒 Añadir al Carrito</button>`);
 
     card.innerHTML = `
       <div class="book-cover-wrapper">
@@ -347,13 +375,8 @@ function filterBooks(searchTerm) {
 async function addToCart(bookId) {
   const userId = localStorage.getItem('userId');
   if (!userId) return;
-
   try {
-    const res = await fetch(`${API_URL}/cart`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, book_id: bookId })
-    });
+    const res = await fetch(`${API_URL}/cart`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, book_id: bookId }) });
     const data = await res.json();
     if (data.success) {
       updateCartBadge();
@@ -372,7 +395,8 @@ async function updateCartBadge() {
     const items = await res.json();
     let totalCount = 0;
     items.forEach(i => totalCount += i.quantity);
-    document.getElementById('cartCount').textContent = totalCount;
+    const badge = document.getElementById('cartCount');
+    if (badge) badge.textContent = totalCount;
   } catch (err) {
     console.error(err);
   }
@@ -381,93 +405,60 @@ async function updateCartBadge() {
 async function loadCart() {
   const userId = localStorage.getItem('userId');
   if (!userId) return;
-
   try {
     const res = await fetch(`${API_URL}/cart/${userId}`);
     const items = await res.json();
     const tbody = document.getElementById('cartTableBody');
+    if (!tbody) return;
     tbody.innerHTML = '';
-
     let totalSum = 0;
 
     if (items.length === 0) {
       tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:30px;">Tu carrito está vacío 🛒</td></tr>`;
-      document.getElementById('cartTotalElement').textContent = 'Q0.00';
+      const totElem = document.getElementById('cartTotalElement');
+      if (totElem) totElem.textContent = 'Q0.00';
       return;
     }
 
     items.forEach(item => {
       const subtotal = item.price * item.quantity;
       totalSum += subtotal;
-
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <img src="${item.image}" style="width:35px; height:50px; border-radius:4px; object-fit:cover;">
-            <div>
-              <strong>${item.title}</strong><br>
-              <span style="font-size:12px; color:var(--text-muted);">Q${item.price.toFixed(2)} c/u</span>
-            </div>
-          </div>
-        </td>
-        <td>
-          <div class="cart-qty-controls">
-            <button onclick="changeQty(${item.cartItemId}, ${item.quantity - 1})">-</button>
-            <span>${item.quantity}</span>
-            <button onclick="changeQty(${item.cartItemId}, ${item.quantity + 1})">+</button>
-          </div>
-        </td>
-        <td style="color:var(--neon-green); font-weight:700;">Q${subtotal.toFixed(2)}</td>
-        <td><button class="btn-remove-item" onclick="removeCartItem(${item.cartItemId})">❌</button></td>
+        <td><strong>${item.title}</strong><br><span style="font-size:12px; color:var(--text-muted);">Q${item.price.toFixed(2)}</span></td>
+        <td><button onclick="changeQty(${item.cartItemId}, ${item.quantity - 1})">-</button> <span>${item.quantity}</span> <button onclick="changeQty(${item.cartItemId}, ${item.quantity + 1})">+</button></td>
+        <td style="color:var(--neon-green);">Q${subtotal.toFixed(2)}</td>
+        <td><button onclick="removeCartItem(${item.cartItemId})">❌</button></td>
       `;
       tbody.appendChild(tr);
     });
-
-    document.getElementById('cartTotalElement').textContent = `Q${totalSum.toFixed(2)}`;
+    const totElem = document.getElementById('cartTotalElement');
+    if (totElem) totElem.textContent = `Q${totalSum.toFixed(2)}`;
   } catch (err) {
     console.error(err);
   }
 }
 
 async function changeQty(cartItemId, newQty) {
-  if (newQty <= 0) {
-    removeCartItem(cartItemId);
-    return;
-  }
+  if (newQty <= 0) return removeCartItem(cartItemId);
   try {
-    const res = await fetch(`${API_URL}/cart/${cartItemId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ quantity: newQty })
-    });
+    const res = await fetch(`${API_URL}/cart/${cartItemId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quantity: newQty }) });
     const data = await res.json();
-    if (data.success) {
-      loadCart();
-      updateCartBadge();
-    }
-  } catch (err) {
-    console.error(err);
-  }
+    if (data.success) { loadCart(); updateCartBadge(); }
+  } catch (err) { console.error(err); }
 }
 
 async function removeCartItem(cartItemId) {
   try {
     const res = await fetch(`${API_URL}/cart/${cartItemId}`, { method: 'DELETE' });
     const data = await res.json();
-    if (data.success) {
-      loadCart();
-      updateCartBadge();
-    }
-  } catch (err) {
-    console.error(err);
-  }
+    if (data.success) { loadCart(); updateCartBadge(); }
+  } catch (err) { console.error(err); }
 }
 
 function editBook(id) {
   const book = allBooksLocal.find(b => b.id === id);
   if (!book) return;
-
   document.getElementById('adminBookId').value = book.id;
   document.getElementById('adminTitle').value = book.title;
   document.getElementById('adminAuthor').value = book.author;
@@ -477,33 +468,26 @@ function editBook(id) {
   document.getElementById('adminLink').value = book.full_link;
   document.getElementById('adminBadge').value = book.badge || 'Ninguno';
 
-  document.getElementById('formTitleHeader').textContent = '📝 Editar Libro Existente';
+  document.getElementById('formTitleHeader').textContent = '📝 Editar Libro';
   document.getElementById('btnSubmitBook').textContent = 'Guardar Cambios';
   document.getElementById('btnCancelEdit').classList.remove('hidden');
-
-  document.getElementById('admin-section').scrollIntoView({ behavior: 'smooth' });
 }
 
 function cancelBookEdit() {
   document.getElementById('adminBookId').value = '';
   document.getElementById('adminBookForm').reset();
-  document.getElementById('formTitleHeader').textContent = '➕ Agregar Nuevo Libro al Catálogo';
+  document.getElementById('formTitleHeader').textContent = '➕ Agregar Nuevo Libro';
   document.getElementById('btnSubmitBook').textContent = 'Publicar Libro';
   document.getElementById('btnCancelEdit').classList.add('hidden');
 }
 
 async function deleteBook(id) {
-  if (!confirm('⚠ ¿Seguro que deseas eliminar permanentemente este libro del catálogo?')) return;
+  if (!confirm('¿Eliminar libro?')) return;
   try {
     const res = await fetch(`${API_URL}/books/${id}`, { method: 'DELETE' });
     const data = await res.json();
-    if (data.success) {
-      alert('Libro removido del catálogo correctamente.');
-      loadCatalog();
-    }
-  } catch (err) {
-    console.error(err);
-  }
+    if (data.success) loadCatalog();
+  } catch (err) { console.error(err); }
 }
 
 async function loadAdminSales() {
@@ -511,58 +495,36 @@ async function loadAdminSales() {
     const res = await fetch(`${API_URL}/admin/sales`);
     const sales = await res.json();
     renderAdminSales(sales);
-  } catch (err) {
-    console.error(err);
-  }
+  } catch (err) { console.error(err); }
 }
 
 function renderAdminSales(salesList) {
   const tbody = document.getElementById('salesLogTableBody');
+  if (!tbody) return;
   tbody.innerHTML = '';
-
   if (salesList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">No se registran transacciones aún.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No hay transacciones.</td></tr>`;
     return;
   }
-
   salesList.forEach(sale => {
     const tr = document.createElement('tr');
-    tr.classList.add('sales-row-tr');
-    tr.title = "Doble clic para eliminar esta venta";
-    
     tr.innerHTML = `
       <td><strong>#${sale.id}</strong></td>
       <td>${sale.user_email}</td>
       <td>${sale.date}</td>
-      <td style="color:var(--neon-cyan); font-weight:700;">Q${sale.total.toFixed(2)}</td>
-      <td><span style="background:rgba(16,185,129,0.15); color:var(--neon-green); padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700; border:1px solid rgba(16,185,129,0.3)">${sale.status}</span></td>
-      <td style="text-align:center;">
-        <button class="btn-mini-delete" title="Eliminar esta venta">🗑️</button>
-      </td>
+      <td style="color:var(--neon-cyan);">Q${sale.total.toFixed(2)}</td>
+      <td><span>${sale.status}</span></td>
+      <td><button onclick="deleteSingleSale(${sale.id})">🗑️</button></td>
     `;
-
-    tr.addEventListener('dblclick', () => {
-      deleteSingleSale(sale.id);
-    });
-
-    tr.querySelector('.btn-mini-delete').addEventListener('click', (e) => {
-      e.stopPropagation(); 
-      deleteSingleSale(sale.id);
-    });
-
     tbody.appendChild(tr);
   });
 }
 
 async function deleteSingleSale(orderId) {
-  if (!confirm(`¿Eliminar de los registros la venta #${orderId}?`)) return;
+  if (!confirm(`¿Eliminar venta #${orderId}?`)) return;
   try {
     const res = await fetch(`${API_URL}/admin/sales/${orderId}`, { method: 'DELETE' });
     const data = await res.json();
-    if (data.success) {
-      loadAdminSales();
-    }
-  } catch (err) {
-    console.error(err);
-  }
+    if (data.success) loadAdminSales();
+  } catch (err) { console.error(err); }
 }
