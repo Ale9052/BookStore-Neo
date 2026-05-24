@@ -1,4 +1,4 @@
-const API_URL = window.location.origin;
+const API_URL = "https://bookstore-neo.onrender.com";
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
