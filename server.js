@@ -1,147 +1,70 @@
-// 1. Configuración de la URL de Render (Asegúrate de que coincida con tu servicio)
-const API_URL = "https://bookstore-neo.onrender.com";
+const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors');
+const app = express();
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Captura de formularios
-    const loginForm = document.getElementById('login-form');
-    const registerForm = document.getElementById('register-form');
-    
-    // Cajas visuales de login y registro
-    const loginBox = document.getElementById('login-box');
-    const registerBox = document.getElementById('register-box');
-    
-    // Enlaces para cambiar entre Login y Registro
-    const goToRegister = document.getElementById('go-to-register');
-    const goToLogin = document.getElementById('go-to-login');
-    
-    // Secciones principales del cuerpo
-    const authSection = document.getElementById('auth-section');
-    const storeSection = document.getElementById('store-section');
-    
-    // Elementos del menú de navegación (Header)
-    const userDisplay = document.getElementById('user-display');
-    const usernameText = document.getElementById('username-text');
-    const btnLogout = document.getElementById('btn-logout');
-    const btnCartView = document.getElementById('btn-cart-view');
+// IMPORTANTE: Permitir que tu página de GitHub Pages acceda al servidor sin bloqueos CORS
+app.use(cors());
+app.use(express.json());
 
-    // Intercambiar vista a Registro
-    if (goToRegister) {
-        goToRegister.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginBox.classList.add('hidden');
-            registerBox.classList.remove('hidden');
-        });
+// Conexión a la base de datos SQLite
+const db = new sqlite3.Database('./usuarios.db', (err) => {
+    if (err) console.error("Error al abrir base de datos:", err.message);
+    else console.log("Conectado con éxito a la base de datos SQLite.");
+});
+
+// Crear la tabla si no existe (fíjate en los nombres de las columnas: nombre, correo, contrasena)
+db.run(`CREATE TABLE IF NOT EXISTS usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT,
+    correo TEXT UNIQUE,
+    contrasena TEXT
+)`);
+
+// ROUTER 1: Registro de usuarios
+app.post('/register', (req, res) => {
+    const { nombre, correo, contrasena } = req.body;
+
+    if (!nombre || !correo || !contrasena) {
+        return res.status(400).json({ success: false, message: "Todos los campos son obligatorios." });
     }
 
-    // Intercambiar vista a Login
-    if (goToLogin) {
-        goToLogin.addEventListener('click', (e) => {
-            e.preventDefault();
-            registerBox.classList.add('hidden');
-            loginBox.classList.remove('hidden');
-        });
-    }
-
-    // ==========================================
-    // PROCESO DE REGISTRO
-    // ==========================================
-    if (registerForm) {
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const nombre = document.getElementById('register-name').value.trim();
-            const correo = document.getElementById('register-email').value.trim();
-            const contrasena = document.getElementById('register-password').value.trim();
-
-            try {
-                const response = await fetch(`${API_URL}/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre, correo, contrasena })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    alert(data.message || '¡Cuenta creada con éxito! Ahora inicia sesión.');
-                    // Regresar al cuadro de login automáticamente
-                    registerBox.classList.add('hidden');
-                    loginBox.classList.remove('hidden');
-                } else {
-                    alert(data.message || 'Error al registrar el usuario.');
-                }
-            } catch (error) {
-                console.error("Error en registro:", error);
-                alert('No se pudo conectar con el servidor de Render.');
+    const query = `INSERT INTO usuarios (nombre, correo, contrasena) VALUES (?, ?, ?)`;
+    db.run(query, [nombre, correo, contrasena], function(err) {
+        if (err) {
+            // Si el correo ya existe, SQLite lanzará un error de restricción UNIQUE
+            if (err.message.includes("UNIQUE")) {
+                return res.status(400).json({ success: false, message: "Este correo ya está registrado." });
             }
-        });
+            return res.status(500).json({ success: false, message: "Error interno al guardar en la base de datos." });
+        }
+        res.status(201).json({ success: true, message: "¡Usuario registrado con éxito!" });
+    });
+});
+
+// ROUTER 2: Inicio de sesión (Login)
+app.post('/login', (req, res) => {
+    const { correo, contrasena } = req.body;
+
+    if (!correo || !contrasena) {
+        return res.status(400).json({ success: false, message: "Correo y contraseña requeridos." });
     }
 
-    // ==========================================
-    // PROCESO DE INICIO DE SESIÓN (LOGIN)
-    // ==========================================
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+    const query = `SELECT * FROM usuarios WHERE correo = ? AND contrasena = ?`;
+    db.get(query, [correo, contrasena], (err, row) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: "Error en el servidor." });
+        }
+        if (row) {
+            res.json({ success: true, message: "¡Ingreso exitoso!", usuario: { nombre: row.nombre, correo: row.correo } });
+        } else {
+            res.status(401).json({ success: false, message: "El correo o la contraseña son incorrectos." });
+        }
+    });
+});
 
-            const correo = document.getElementById('login-email').value.trim();
-            const contrasena = document.getElementById('login-password').value.trim();
-
-            try {
-                const response = await fetch(`${API_URL}/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ correo, contrasena })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    alert("¡Bienvenido! " + data.usuario.nombre);
-
-                    // 1. Ocultar la sección de autenticación completa
-                    authSection.classList.add('hidden');
-
-                    // 2. Mostrar la tienda/catálogo de libros
-                    storeSection.classList.remove('hidden');
-
-                    // 3. Mostrar elementos del menú de navegación (Header)
-                    userDisplay.classList.remove('hidden');
-                    btnLogout.classList.remove('hidden');
-                    if (btnCartView) btnCartView.classList.remove('hidden');
-
-                    // 4. Colocar el nombre del usuario logueado en el texto
-                    usernameText.textContent = data.usuario.nombre;
-                } else {
-                    alert(data.message || 'Usuario o contraseña incorrectos.');
-                }
-            } catch (error) {
-                console.error("Error en login:", error);
-                alert('No se pudo conectar con el servidor de Render.');
-            }
-        });
-    }
-
-    // ==========================================
-    // PROCESO DE CERRAR SESIÓN
-    // ==========================================
-    if (btnLogout) {
-        btnLogout.addEventListener('click', () => {
-            // Regresar todo a su estado inicial
-            authSection.classList.remove('hidden');
-            loginBox.classList.remove('hidden');
-            registerBox.classList.add('hidden');
-            
-            storeSection.classList.add('hidden');
-            userDisplay.classList.add('hidden');
-            btnLogout.classList.add('hidden');
-            if (btnCartView) btnCartView.classList.add('hidden');
-            
-            // Limpiar los inputs
-            if (loginForm) loginForm.reset();
-            if (registerForm) registerForm.reset();
-            
-            alert('Has cerrado sesión correctamente.');
-        });
-    }
+// Asignar puerto dinámico para Render
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
