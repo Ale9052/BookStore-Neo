@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Comprobación de sesión activa
     const sessionUser = localStorage.getItem('usuarioLogueado');
     if (sessionUser) {
         const user = JSON.parse(sessionUser);
@@ -69,9 +70,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (registerForm) {
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Captura los valores del formulario actualizados
+            const nombre = document.getElementById('register-name').value.trim();
             const correo = document.getElementById('register-email').value.trim();
             const contrasena = document.getElementById('register-password').value.trim();
-            const rol = document.getElementById('register-role').value;
 
             if (contrasena.length < 6) {
                 alert('La contraseña requiere un mínimo de 6 caracteres.');
@@ -82,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(`${API_URL}/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ correo, contrasena, rol })
+                    body: JSON.stringify({ nombre, correo, contrasena }) // Envía el nombre al backend
                 });
 
                 const data = await response.json();
@@ -114,17 +117,13 @@ document.addEventListener('DOMContentLoaded', () => {
         storeSection.classList.remove('hidden');
         userDisplay.classList.remove('hidden');
         btnLogout.classList.remove('hidden');
-        usernameText.textContent = user.correo;
+        
+        // Muestra el nombre real del usuario en la barra superior en lugar del correo electrónico
+        usernameText.textContent = user.nombre || user.correo;
 
-        if (user.rol === 'admin') {
-            const btnAdmin = document.getElementById('btn-admin-view');
-            if (btnAdmin) btnAdmin.classList.remove('hidden');
-            cargarLibrosAdmin();
-        } else {
-            const btnCart = document.getElementById('btn-cart-view');
-            if (btnCart) btnCart.classList.remove('hidden');
-            cargarLibrosCliente();
-        }
+        const btnCart = document.getElementById('btn-cart-view');
+        if (btnCart) btnCart.classList.remove('hidden');
+        cargarLibrosCliente();
     }
 
     function cargarLibrosCliente() {
@@ -135,16 +134,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="book-details">
                     <span class="book-category-tag">Programación</span>
                     <h3>Estructuras de Datos y Algoritmos</h3>
-                    <p>Optimización y desarrollo de sistemas backend avanzados.</p>
+                    <p>Optimización y desarrollo de sistemas avanzados.</p>
                     <div class="price-row"><span class="price">Q150.00</span></div>
                     <button class="btn-shop-buy">Añadir al Carrito</button>
                 </div>
             </div>
         `;
-    }
-
-    function cargarLibrosAdmin() {
-        const container = document.getElementById('books-container');
-        container.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--neon-cyan); padding: 20px;">⚙️ Modo Administrador detectado: Panel de Control de Inventario Activo.</p>`;
     }
 });
