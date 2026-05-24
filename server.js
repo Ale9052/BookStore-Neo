@@ -5,20 +5,18 @@ const cors = require('cors');
 const path = require('path'); 
 
 const app = express();
-// Ajuste para Render: usa el puerto asignado por la plataforma o el 3000 localmente
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
-// Sirve archivos estáticos (html, css, js) desde la raíz del proyecto
 app.use(express.static(__dirname));
 
-// Solución definitiva al error "Cannot GET /" en Render
+// Servir el index.html en la raíz para evitar el error "Cannot GET /"
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Ajuste para Render: la base de datos se guarda en la carpeta /tmp con ruta absoluta segura
+// Ruta absoluta y segura para la base de datos en los servidores de Render
 const dbPath = path.join('/tmp', 'libreria.db');
 const db = new sqlite3.Database(dbPath);
 
@@ -67,16 +65,12 @@ db.serialize(() => {
     FOREIGN KEY(order_id) REFERENCES orders(id)
   )`);
 
-  // SOLUCIÓN AL ADMIN: Insertar automáticamente al administrador si no existe en la base de datos
+  // Crear al administrador automáticamente apenas se monte el servidor
   const adminEmail = 'admin@gmail.com';
   const adminPassword = 'admin123';
   db.get('SELECT * FROM users WHERE email = ?', [adminEmail], (err, row) => {
     if (!row) {
-      db.run('INSERT INTO users (email, password, role) VALUES (?, ?, ?)', [adminEmail, adminPassword, 'admin'], (err) => {
-        if (!err) {
-          console.log('Usuario administrador inicializado correctamente (admin@gmail.com).');
-        }
-      });
+      db.run('INSERT INTO users (email, password, role) VALUES (?, ?, ?)', [adminEmail, adminPassword, 'admin']);
     }
   });
 });
@@ -86,7 +80,7 @@ db.serialize(() => {
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
   db.run('INSERT INTO users (email, password) VALUES (?, ?)', [email, password], function(err) {
-    if (err) return res.json({ success: false, message: 'El usuario ya existe o los datos son inválidos.' });
+    if (err) return res.json({ success: false, message: 'El usuario ya existe.' });
     res.json({ success: true, userId: this.lastID, role: 'user' });
   });
 });
