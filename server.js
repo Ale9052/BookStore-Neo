@@ -11,12 +11,12 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(__dirname));
 
-// Evita el error "Cannot GET /" sirviendo el archivo principal
+// Servir el index.html en la raíz
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Ruta segura para que no se congele la base de datos en Render
+// Ruta segura para la base de datos en los servidores de Render
 const dbPath = path.join('/tmp', 'libreria.db');
 const db = new sqlite3.Database(dbPath);
 
@@ -65,7 +65,7 @@ db.serialize(() => {
     FOREIGN KEY(order_id) REFERENCES orders(id)
   )`);
 
-  // CREACIÓN AUTOMÁTICA DEL ADMINISTRADOR
+  // Crear al administrador automáticamente apenas se monte el servidor
   const adminEmail = 'admin@gmail.com';
   const adminPassword = 'admin123';
   db.get('SELECT * FROM users WHERE email = ?', [adminEmail], (err, row) => {
@@ -178,7 +178,7 @@ app.delete('/cart/:cartItemId', (req, res) => {
   });
 });
 
-// --- RUTAS DE ÓRDENES Y COMPRAS ---
+// --- RUTAS DE ÓRDENES ---
 
 app.post('/orders', (req, res) => {
   const { userId, userEmail, total, items } = req.body;
@@ -243,5 +243,5 @@ app.delete('/admin/sales/:id', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor de BookStore Neo corriendo en el puerto ${PORT}`);
+  console.log(`Servidor ejecutándose correctamente en el puerto ${PORT}`);
 });
