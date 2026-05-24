@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         res = await fetch(`${API_URL}/books/${bookId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bookData })
+          body: JSON.stringify(bookData)
         });
       } else {
         res = await fetch(`${API_URL}/books`, {
