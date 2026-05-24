@@ -23,6 +23,7 @@ const db = new sqlite3.Database(dbPath);
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
     email TEXT UNIQUE,
     password TEXT,
     role TEXT DEFAULT 'user'
@@ -70,7 +71,7 @@ db.serialize(() => {
   const adminPassword = 'admin123';
   db.get('SELECT * FROM users WHERE email = ?', [adminEmail], (err, row) => {
     if (!row) {
-      db.run('INSERT INTO users (email, password, role) VALUES (?, ?, ?)', [adminEmail, adminPassword, 'admin']);
+      db.run('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', ['Administrador', adminEmail, adminPassword, 'admin']);
     }
   });
 });
@@ -78,10 +79,10 @@ db.serialize(() => {
 // --- RUTAS DE AUTENTICACIÓN ---
 
 app.post('/register', (req, res) => {
-  const { email, password } = req.body;
-  db.run('INSERT INTO users (email, password) VALUES (?, ?)', [email, password], function(err) {
-    if (err) return res.json({ success: false, message: 'El usuario ya existe.' });
-    res.json({ success: true, userId: this.lastID, role: 'user' });
+  const { name, email, password } = req.body;
+  db.run('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, password], function(err) {
+    if (err) return res.json({ success: false, message: 'El correo electrónico ya está registrado.' });
+    res.json({ success: true, userId: this.lastID, role: 'user', name: name });
   });
 });
 
@@ -90,10 +91,10 @@ app.post('/login', (req, res) => {
   if (email === 'admin@gmail.com' && password === 'admin123') {
     db.get('SELECT * FROM users WHERE email = ?', [email], (err, row) => {
       if (row) {
-        res.json({ success: true, userId: row.id, role: 'admin' });
+        res.json({ success: true, userId: row.id, role: 'admin', name: row.name || 'Admin' });
       } else {
-        db.run('INSERT INTO users (email, password, role) VALUES (?, ?, ?)', [email, password, 'admin'], function() {
-          res.json({ success: true, userId: this.lastID, role: 'admin' });
+        db.run('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', ['Administrador', email, password, 'admin'], function() {
+          res.json({ success: true, userId: this.lastID, role: 'admin', name: 'Administrador' });
         });
       }
     });
@@ -101,7 +102,7 @@ app.post('/login', (req, res) => {
   }
   db.get('SELECT * FROM users WHERE email = ? AND password = ?', [email, password], (err, row) => {
     if (err || !row) return res.json({ success: false, message: 'Credenciales incorrectas.' });
-    res.json({ success: true, userId: row.id, role: row.role });
+    res.json({ success: true, userId: row.id, role: row.role, name: row.name || row.email });
   });
 });
 
