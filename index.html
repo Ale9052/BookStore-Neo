@@ -3,213 +3,263 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BookStore Neo - Librería Virtual Premium</title>
-  <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>BookStore Neo</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --neon-cyan: #06b6d4;
+      --neon-green: #10b981;
+      --neon-pink: #ec4899;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    .hidden { display: none !important; }
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .auth-wrapper {
+      max-width: 400px;
+      margin: 60px auto;
+    }
+    .auth-box h2 { text-align: center; color: var(--neon-cyan); }
+    .input-group { margin-bottom: 15px; }
+    .input-group label { display: block; margin-bottom: 5px; color: var(--text-muted); }
+    .input-group input, .input-group select {
+      width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #334155;
+      background: #0f172a; color: white; box-sizing: border-box;
+    }
+    .password-wrapper { display: flex; gap: 5px; }
+    .toggle-password { background: #334155; border: none; color: white; padding: 10px; border-radius: 6px; cursor: pointer; }
+    .btn-auth, .btn-card, .btn-action {
+      width: 100%; padding: 12px; background: var(--neon-cyan); border: none;
+      color: var(--bg-dark); font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px;
+    }
+    .btn-auth:hover { background: #22d3ee; }
+    .auth-switch { text-align: center; margin-top: 15px; font-size: 14px; color: var(--text-muted); }
+    .auth-switch a { color: var(--neon-cyan); text-decoration: none; }
+    
+    header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid #334155; }
+    .search-container { margin: 20px 0; text-align: center; }
+    .search-container input { width: 60%; padding: 12px; border-radius: 8px; border: 1px solid var(--neon-cyan); background: #1e293b; color: white; }
+    
+    .categories-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+    .btn-category { padding: 8px 16px; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 20px; cursor: pointer; }
+    .btn-category.active { background: var(--neon-cyan); color: var(--bg-dark); font-weight: bold; }
+
+    .books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+    .book-card { display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+    .book-cover-wrapper { position: relative; text-align: center; }
+    .book-cover { width: 150px; height: 220px; object-fit: cover; border-radius: 6px; }
+    .book-badge { position: absolute; top: 10px; right: 10px; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; }
+    .badge-cyan { background: var(--neon-cyan); color: black; }
+    .badge-pink { background: var(--neon-pink); color: white; }
+    .badge-green { background: var(--neon-green); color: white; }
+    .book-info { margin-top: 10px; }
+    .book-category-tag { font-size: 12px; color: var(--neon-cyan); text-transform: uppercase; }
+    .book-title-h3 { margin: 5px 0; font-size: 16px; }
+    .book-author-p { font-size: 14px; color: var(--text-muted); margin: 0 0 10px 0; }
+    .book-footer-row { display: flex; justify-content: space-between; align-items: center; }
+    .book-price { font-weight: bold; color: var(--neon-green); }
+    .owned-indicator { font-size: 12px; color: var(--neon-green); }
+    .btn-read { background: var(--neon-green) !important; color: white !important; text-align: center; text-decoration: none; display: block; box-sizing: border-box; }
+
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 100; }
+    .modal-content { width: 90%; max-width: 600px; max-height: 80%; overflow-y: auto; }
+    .cart-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .cart-table th, .cart-table td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; }
+    .cart-qty-controls { display: flex; gap: 5px; align-items: center; }
+    .cart-qty-controls button { background: #334155; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; }
+    .btn-remove-item { background: transparent; border: none; cursor: pointer; }
+
+    .admin-box { margin-top: 40px; border-top: 2px dashed var(--neon-pink); padding-top: 20px; }
+    .admin-split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 768px) { .admin-split { grid-template-columns: 1fr; } }
+    .sales-table { width: 100%; border-collapse: collapse; }
+    .sales-table th, .sales-table td { padding: 10px; border-bottom: 1px solid #334155; font-size: 14px; }
+    .btn-mini-delete { background: transparent; border: none; cursor: pointer; }
+    .admin-card-actions { display: flex; gap: 5px; margin-top: 10px; }
+    .btn-card-edit { background: #eab308; color: black; border: none; padding: 5px; width: 50%; cursor: pointer; font-weight: bold; border-radius: 4px; }
+    .btn-card-delete { background: #ef4444; color: white; border: none; padding: 5px; width: 50%; cursor: pointer; font-weight: bold; border-radius: 4px; }
+  </style>
 </head>
 <body>
 
+  <div id="auth-section" class="auth-wrapper glass">
+    <div id="login-box" class="auth-box">
+      <h2>Iniciar Sesión</h2>
+      <form id="loginForm">
+        <div class="input-group">
+          <label>Correo Electrónico</label>
+          <input type="email" id="loginEmail" required>
+        </div>
+        <div class="input-group">
+          <label>Contraseña</label>
+          <div class="password-wrapper">
+            <input type="password" id="loginPassword" required>
+            <button type="button" class="toggle-password" data-target="loginPassword">👁️</button>
+          </div>
+        </div>
+        <button type="submit" class="btn-auth">Ingresar</button>
+      </form>
+      <p class="auth-switch">¿No tienes cuenta? <a href="#" id="showRegister">Regístrate aquí</a></p>
+    </div>
 
-  <header>
-    <div class="logo">BookStore<span class="neon-dot">.</span></div>
-    
+    <div id="register-box" class="auth-box hidden">
+      <h2>Crear Cuenta</h2>
+      <form id="registerForm">
+        <div class="input-group">
+          <label>Correo Electrónico</label>
+          <input type="email" id="registerEmail" required>
+        </div>
+        <div class="input-group">
+          <label>Contraseña</label>
+          <div class="password-wrapper">
+            <input type="password" id="registerPassword" required>
+            <button type="button" class="toggle-password" data-target="registerPassword">👁️</button>
+          </div>
+        </div>
+        <button type="submit" class="btn-auth">Registrarse</button>
+      </form>
+      <p class="auth-switch">¿Ya tienes cuenta? <a href="#" id="showLogin">Inicia sesión aquí</a></p>
+    </div>
+  </div>
+
+  <div id="app-content" class="hidden">
+    <header>
+      <h1 style="color: var(--neon-cyan); margin: 0;">📚 BookStore Neo</h1>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <span id="userGreeting" class="hidden" style="font-weight: bold;"></span>
+        <button id="viewCartBtn" style="padding: 8px 16px; background: #1e293b; color: white; border: 1px solid var(--neon-cyan); border-radius: 6px; cursor: pointer;">
+          🛒 Carrito (<span id="cartCount">0</span>)
+        </button>
+        <button id="logoutBtn" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer;">Cerrar Sesión</button>
+      </div>
+    </header>
+
     <div id="search-wrapper" class="search-container hidden">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="bookSearchInput" placeholder="Buscar tu próxima lectura por título o autor...">
+      <input type="text" id="bookSearchInput" placeholder="Buscar por título o autor...">
     </div>
 
-    <nav>
-      <span id="userGreeting" class="user-greeting hidden"></span>
-      <button id="viewCartBtn" class="btn-nav hidden">
-        <span>🛒</span> Mi Carrito <span id="cartCount" class="badge">0</span>
-      </button>
-    </nav>
-    <button id="logoutBtn" class="btn-logout hidden">Cerrar Sesión</button>
-  </header>
+    <div class="categories-bar">
+      <button class="btn-category active" data-category="Todos">Todos</button>
+      <button class="btn-category" data-category="Ingeniería">Ingeniería</button>
+      <button class="btn-category" data-category="Literatura">Literatura</button>
+      <button class="btn-category" data-category="Ciencia">Ciencia</button>
+    </div>
 
-  <main>
-    <section id="auth-section" class="auth-container">
-      <div class="form-box glass" id="login-box">
-        <h2>Bienvenido de nuevo</h2>
-        <p class="subtitle">Ingresa con tu cuenta verídica de Gmail</p>
-        <form id="loginForm">
-          <div class="input-group">
-            <label>Correo Electrónico</label>
-            <input type="email" id="loginEmail" placeholder="usuario@gmail.com" required>
+    <div id="noResultsMessage" class="hidden" style="text-align: center; color: var(--text-muted); padding: 4px;">No se encontraron libros que coincidan.</div>
+    <div id="booksContainer" class="books-grid"></div>
+
+    <div id="cart-modal" class="modal hidden">
+      <div class="modal-content glass">
+        <h2>Tu Carrito de Compras</h2>
+        <table class="cart-table">
+          <thead>
+            <tr>
+              <th>Libro</th>
+              <th>Cantidad</th>
+              <th>Subtotal</th>
+              <th>Eliminar</th>
+            </tr>
+          </thead>
+          <tbody id="cartTableBody"></tbody>
+        </table>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+          <h3>Total: <span id="cartTotalElement" style="color: var(--neon-green);">Q0.00</span></h3>
+          <div style="display: flex; gap: 10px;">
+            <button id="closeCartBtn" style="padding: 10px 20px; background: #334155; border: none; color: white; border-radius: 6px; cursor: pointer;">Cerrar</button>
+            <button id="checkoutBtn" style="padding: 10px 20px; background: var(--neon-green); border: none; color: white; font-weight: bold; border-radius: 6px; cursor: pointer;">Procesar Compra</button>
           </div>
-          <div class="input-group">
-            <label>Contraseña</label>
-            <div class="password-wrapper">
-              <input type="password" id="loginPassword" placeholder="••••••••" required>
-              <button type="button" class="toggle-password" data-target="loginPassword">👁️</button>
-            </div>
-          </div>
-          <button type="submit" class="btn-primary">Iniciar Sesión</button>
-        </form>
-        <p class="auth-switch">¿Nuevo en la plataforma? <a href="#" id="showRegister">Crea una cuenta aquí</a></p>
+        </div>
       </div>
+    </div>
 
-      <div class="form-box glass hidden" id="register-box">
-        <h2>Crear una cuenta</h2>
-        <p class="subtitle">Se verificará que introduzcas un correo @gmail.com real</p>
-        <form id="registerForm">
-          <div class="input-group">
-            <label>Correo Electrónico (Gmail)</label>
-            <input type="email" id="registerEmail" placeholder="ejemplo@gmail.com" required>
-          </div>
-          <div class="input-group">
-            <label>Contraseña de la plataforma (Mínimo 6 caracteres)</label>
-            <div class="password-wrapper">
-              <input type="password" id="registerPassword" placeholder="Mínimo 6 caracteres" minlength="6" required>
-              <button type="button" class="toggle-password" data-target="registerPassword">👁️</button>
-            </div>
-          </div>
-          <button type="submit" class="btn-primary">Registrarse</button>
-        </form>
-        <p class="auth-switch">¿Ya tienes cuenta? <a href="#" id="showLogin">Inicia sesión</a></p>
-      </div>
-    </section>
-
-    <div id="shop-section" class="hidden">
-      
-      <section id="admin-section" class="container hidden">
-        <div class="admin-dashboard">
-          <div class="form-box glass admin-box" id="adminFormWrapper">
-            <h3 id="formAdminTitle">Añadir Nuevo Libro</h3>
-            <form id="bookForm">
-              <input type="hidden" id="editBookId">
-              <div class="input-group">
-                <label>Título del Libro</label>
-                <input type="text" id="bookTitle" placeholder="Ej: El Alquimista" required>
-              </div>
-              <div class="input-group">
-                <label>Autor</label>
-                <input type="text" id="bookAuthor" placeholder="Ej: Paulo Coelho" required>
-              </div>
-              <div class="input-group">
-                <label>Categoría</label>
-                <select id="bookCategory" class="custom-select" required>
-                  <option value="Programación">💻 Programación</option>
-                  <option value="Fantasía">🔮 Fantasía</option>
-                  <option value="Terror">👻 Terror</option>
-                  <option value="Superación">📈 Superación Personal</option>
-                  <option value="Ciencia Ficción">🚀 Ciencia Ficción</option>
-                  <option value="Matemática">📐 Matemática</option> <option value="Fantasía">🔮 Fantasía</option>
-                </select>
-              </div>
-              <div class="input-group">
-                <label>Precio (Q)</label>
-                <input type="text" id="bookPrice" placeholder="Ej: 85.00" required>
-              </div>
-              <div class="input-group">
-                <label>URL de la Portada</label>
-                <input type="text" id="bookImage" placeholder="https://..." required>
-              </div>
-              <div class="input-group">
-                <label>Enlace del Libro Completo (Solo Compradores/Admin)</label>
-                <input type="text" id="bookFullLink" placeholder="Ej: https://drive.google.com/.../view" required>
-              </div>
-              <div class="input-group">
-                <label>Etiqueta de Marketing Especial</label>
-                <select id="bookBadge" class="custom-select">
-                  <option value="">-- Sin Etiqueta --</option>
-                  <option value="🔥 Más Vendido">🔥 Más Vendido</option>
-                  <option value="⏳ Pocas Existencias">⏳ Pocas Existencias</option>
-                  <option value="✨ Nuevo">✨ Nuevo</option>
-                  <option value="⚡ Oferta Especial">⚡ Oferta Especial</option>
-                </select>
-              </div>
-              <div class="admin-buttons">
-                <button type="submit" id="btnAdminSubmit" class="btn-primary">Guardar en Inventario</button>
-                <button type="button" id="btnCancelEdit" class="btn-secondary hidden">Cancelar Edición</button>
-              </div>
-            </form>
-          </div>
-          
-          <div class="sales-box glass">
-            <div class="sales-header">
-              <div>
-                <h3>Historial de Ventas Globales</h3>
-                <small style="color: var(--text-muted); font-size: 11px;">💡 Tip: Doble clic en una fila para eliminar esa venta</small>
-              </div>
-              <button id="btnClearHistoryBtn" class="btn-card-delete" style="padding: 6px 14px; width: auto; margin-bottom: 0;">🗑️ Limpiar Historial</button>
-            </div>
-            <div class="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID Orden</th>
-                    <th>Cliente</th>
-                    <th>Fecha y Hora</th>
-                    <th>Total</th>
-                    <th>Estado</th>
-                    <th style="text-align: center;">Acción</th>
-                  </tr>
-                </thead>
-                <tbody id="salesTableBody">
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="cart-section" class="container hidden">
-        <div class="section-header">
-          <h2>Tu Carrito de Compras</h2>
-          <p>Revisa tus libros seleccionados antes de procesar tu pago cifrado</p>
-        </div>
-        <div class="cart-layout">
-          <div id="cartItemsContainer" class="cart-items-list">
-          </div>
-          <div class="cart-summary glass">
-            <h3>Resumen de orden</h3>
-            <div class="summary-row">
-              <span>Subtotal</span>
-              <span id="cartTotal">Q0.00</span>
-            </div>
-            <div class="summary-row">
-              <span>Envío</span>
-              <span id="shippingCost" class="text-neon-green">Gratis</span>
-            </div>
-            <div class="summary-row total">
-              <span>Total</span>
-              <span id="cartTotalFinal">Q0.00</span>
-            </div>
-            <button id="checkoutBtn" class="btn-primary btn-pay">Proceder al Pago Seguro 💳</button>
-            <button id="closeCartBtn" class="btn-secondary">Volver al Catálogo</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="catalogo-section" class="container">
-        <div class="section-header">
-          <h2>Explora Nuestro Catálogo</h2>
-          <p>Adquiere los títulos literarios más influyentes del planeta</p>
-        </div>
-
-        <div class="category-filter-bar">
-          <button class="btn-category active" data-category="Todos">🌐 Todos los libros</button>
-          <button class="btn-category" data-category="Programación">💻 Programación</button>
-          <button class="btn-category" data-category="Fantasía">🔮 Fantasía</button>
-          <button class="btn-category" data-category="Terror">👻 Terror</button>
-          <button class="btn-category" data-category="Superación">📈 Superación</button>
-          <button class="btn-category" data-category="Ciencia Ficción">🚀 Ciencia Ficción</button>
-        </div>
+    <div id="admin-section" class="admin-box hidden">
+      <h2 style="color: var(--neon-pink);">⚙ Panel de Control del Administrador</h2>
+      <div class="admin-split">
         
-        <div id="noResultsMessage" class="no-results glass hidden">
-          😔 No encontramos libros en esta categoría o que coincidan con tu búsqueda.
+        <div class="glass">
+          <h3 id="formTitleHeader">➕ Agregar Nuevo Libro</h3>
+          <form id="adminBookForm">
+            <input type="hidden" id="adminBookId">
+            <div class="input-group">
+              <label>Título</label>
+              <input type="text" id="adminTitle" required>
+            </div>
+            <div class="input-group">
+              <label>Autor</label>
+              <input type="text" id="adminAuthor" required>
+            </div>
+            <div class="input-group">
+              <label>Categoría</label>
+              <select id="adminCategory">
+                <option value="Ingeniería">Ingeniería</option>
+                <option value="Literatura">Literatura</option>
+                <option value="Ciencia">Ciencia</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>Precio (Q)</label>
+              <input type="number" id="adminPrice" step="0.01" required>
+            </div>
+            <div class="input-group">
+              <label>URL de la Imagen Cover</label>
+              <input type="url" id="adminImage" required>
+            </div>
+            <div class="input-group">
+              <label>Enlace de Lectura Completo</label>
+              <input type="url" id="adminLink" required>
+            </div>
+            <div class="input-group">
+              <label>Etiqueta Especial</label>
+              <select id="adminBadge">
+                <option value="Ninguno">Ninguno</option>
+                <option value="Nuevo">Nuevo</option>
+                <option value="Tendencia">Tendencia</option>
+                <option value="Premium">Premium</option>
+              </select>
+            </div>
+            <button type="submit" id="btnSubmitBook" class="btn-auth" style="background: var(--neon-pink); color: white;">Publicar Libro</button>
+            <button type="button" id="btnCancelEdit" class="btn-auth hidden" style="background: #334155; color: white;">Cancelar Edición</button>
+          </form>
         </div>
 
-        <div id="booksContainer" class="books-grid"></div>
-      </section>
+        <div class="glass">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3>📈 Historial de Ventas</h3>
+            <button id="btnClearSalesLog" style="padding: 5px 10px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Vaciar Todo</button>
+          </div>
+          <table class="sales-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Usuario</th>
+                <th>Fecha</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="salesLogTableBody"></tbody>
+          </table>
+        </div>
 
+      </div>
     </div>
-  </main>
 
-  <footer>
-    <p>&copy; 2026 BookStore Neo. Desarrollado con tecnología de renderizado de alta fidelidad y seguridad SSL.</p>
-  </footer>
+  </div>
 
   <script src="app.js"></script>
 </body>
