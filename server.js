@@ -1,221 +1,147 @@
-const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
-const bodyParser = require('body-parser');
-const cors = require('cors');
+// 1. Configuración de la URL de Render (Asegúrate de que coincida con tu servicio)
+const API_URL = "https://bookstore-neo.onrender.com";
 
-const app = express();
-const PORT = 3000;
-
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static(__dirname));
-
-const db = new sqlite3.Database('./libreria.db');
-
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE,
-    password TEXT,
-    role TEXT DEFAULT 'user'
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS books (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT,
-    author TEXT,
-    category TEXT,
-    price REAL,
-    image TEXT,
-    full_link TEXT,
-    badge TEXT
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS cart (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    book_id INTEGER,
-    quantity INTEGER DEFAULT 1,
-    FOREIGN KEY(user_id) REFERENCES users(id),
-    FOREIGN KEY(book_id) REFERENCES books(id)
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    user_email TEXT,
-    total REAL,
-    date TEXT,
-    status TEXT DEFAULT 'Pagado',
-    FOREIGN KEY(user_id) REFERENCES users(id)
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS order_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id INTEGER,
-    book_title TEXT,
-    price REAL,
-    quantity INTEGER,
-    FOREIGN KEY(order_id) REFERENCES orders(id)
-  )`);
-
-  // Migración segura por si la tabla ya existía previamente
-  db.get("PRAGMA table_info(books)", (err, rows) => {
-    db.run(`ALTER TABLE books ADD COLUMN category TEXT DEFAULT 'Programación'`, () => {});
-    db.run(`ALTER TABLE books ADD COLUMN full_link TEXT`, () => {});
-  });
-
-  db.run(`INSERT OR IGNORE INTO users (id, email, password, role)
-          VALUES (1, 'admin@gmail.com', '123456', 'admin')`);
-});
-
-app.post('/register', (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) return res.json({ success: false, error: 'Campos vacíos.' });
-  if (!email.toLowerCase().endsWith('@gmail.com')) return res.json({ success: false, error: 'Debe ser @gmail.com.' });
-  if (password.length < 6) return res.json({ success: false, error: 'Mínimo 6 caracteres.' });
-
-  db.run('INSERT INTO users (email, password) VALUES (?, ?)', [email, password], function(err) {
-    if (err) return res.json({ success: false, error: 'Este correo ya se encuentra registrado.' });
-    res.json({ success: true });
-  });
-});
-
-app.post('/login', (req, res) => {
-  const { email, password } = req.body;
-  db.get('SELECT * FROM users WHERE email = ? AND password = ?', [email, password], (err, user) => {
-    if (!user) return res.json({ success: false, error: 'Credenciales incorrectas.' });
-    res.json({ success: true, id: user.id, email: user.email, role: user.role });
-  });
-});
-
-app.get('/books', (req, res) => {
-  db.all('SELECT * FROM books', [], (err, rows) => {
-    if (err) return res.json([]);
-    res.json(rows || []);
-  });
-});
-
-app.post('/books', (req, res) => {
-  const { title, author, category, price, image, full_link, badge } = req.body;
-  const numericPrice = parseFloat(price) || 0.0;
-  db.run('INSERT INTO books (title, author, category, price, image, full_link, badge) VALUES (?, ?, ?, ?, ?, ?, ?)', 
-    [title, author, category, numericPrice, image, full_link, badge], function(err) {
-      if (err) return res.json({ success: false, error: err.message });
-      res.json({ success: true });
-  });
-});
-
-app.put('/books/:id', (req, res) => {
-  const { title, author, category, price, image, full_link, badge } = req.body;
-  const bookId = req.params.id;
-  const numericPrice = parseFloat(price) || 0.0;
-
-  const query = `UPDATE books SET title = ?, author = ?, category = ?, price = ?, image = ?, full_link = ?, badge = ? WHERE id = ?`;
-  db.run(query, [title, author, category, numericPrice, image, full_link, badge, bookId], function(err) {
-    if (err) return res.json({ success: false, error: err.message });
-    res.json({ success: true });
-  });
-});
-
-app.delete('/books/:id', (req, res) => {
-  db.run('DELETE FROM books WHERE id = ?', [req.params.id], function(err) {
-    if (err) return res.json({ success: false });
-    res.json({ success: true });
-  });
-});
-
-app.get('/cart/:userId', (req, res) => {
-  const query = `SELECT cart.id as cartItemId, books.id as bookId, books.title, books.price, books.image, cart.quantity 
-                 FROM cart JOIN books ON cart.book_id = books.id WHERE cart.user_id = ?`;
-  db.all(query, [req.params.userId], (err, rows) => {
-    if (err) return res.json([]);
-    res.json(rows || []);
-  });
-});
-
-app.post('/cart', (req, res) => {
-  const { userId, bookId } = req.body;
-  db.get('SELECT * FROM cart WHERE user_id = ? AND book_id = ?', [userId, bookId], (err, row) => {
-    if (row) {
-      db.run('UPDATE cart SET quantity = quantity + 1 WHERE id = ?', [row.id], () => res.json({ success: true }));
-    } else {
-      db.run('INSERT INTO cart (user_id, book_id) VALUES (?, ?)', [userId, bookId], () => res.json({ success: true }));
-    }
-  });
-});
-
-app.delete('/cart/:cartItemId', (req, res) => {
-  db.run('DELETE FROM cart WHERE id = ?', [req.params.cartItemId], () => res.json({ success: true }));
-});
-
-app.post('/checkout', (req, res) => {
-  const { userId, userEmail, total } = req.body;
-  const dateStr = new Date().toLocaleString('es-GT', { timeZone: 'America/Guatemala' });
-
-  db.serialize(() => {
-    const cartQuery = `SELECT books.title, books.price, cart.quantity FROM cart 
-                       JOIN books ON cart.book_id = books.id WHERE cart.user_id = ?`;
+document.addEventListener('DOMContentLoaded', () => {
+    // Captura de formularios
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
     
-    db.all(cartQuery, [userId], (err, items) => {
-      if (err || !items || items.length === 0) return res.json({ success: false, error: 'Vacío' });
+    // Cajas visuales de login y registro
+    const loginBox = document.getElementById('login-box');
+    const registerBox = document.getElementById('register-box');
+    
+    // Enlaces para cambiar entre Login y Registro
+    const goToRegister = document.getElementById('go-to-register');
+    const goToLogin = document.getElementById('go-to-login');
+    
+    // Secciones principales del cuerpo
+    const authSection = document.getElementById('auth-section');
+    const storeSection = document.getElementById('store-section');
+    
+    // Elementos del menú de navegación (Header)
+    const userDisplay = document.getElementById('user-display');
+    const usernameText = document.getElementById('username-text');
+    const btnLogout = document.getElementById('btn-logout');
+    const btnCartView = document.getElementById('btn-cart-view');
 
-      db.run('INSERT INTO orders (user_id, user_email, total, date) VALUES (?, ?, ?, ?)', 
-        [userId, userEmail, total, dateStr], function(err) {
-          if (err) return res.json({ success: false });
-          const orderId = this.lastID;
+    // Intercambiar vista a Registro
+    if (goToRegister) {
+        goToRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginBox.classList.add('hidden');
+            registerBox.classList.remove('hidden');
+        });
+    }
 
-          const stmt = db.prepare('INSERT INTO order_items (order_id, book_title, price, quantity) VALUES (?, ?, ?, ?)');
-          items.forEach(item => {
-            stmt.run(orderId, item.title, item.price, item.quantity);
-          });
-          stmt.finalize();
+    // Intercambiar vista a Login
+    if (goToLogin) {
+        goToLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            registerBox.classList.add('hidden');
+            loginBox.classList.remove('hidden');
+        });
+    }
 
-          db.run('DELETE FROM cart WHERE user_id = ?', [userId], () => {
-            res.json({ success: true });
-          });
-      });
-    });
-  });
+    // ==========================================
+    // PROCESO DE REGISTRO
+    // ==========================================
+    if (registerForm) {
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const nombre = document.getElementById('register-name').value.trim();
+            const correo = document.getElementById('register-email').value.trim();
+            const contrasena = document.getElementById('register-password').value.trim();
+
+            try {
+                const response = await fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre, correo, contrasena })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    alert(data.message || '¡Cuenta creada con éxito! Ahora inicia sesión.');
+                    // Regresar al cuadro de login automáticamente
+                    registerBox.classList.add('hidden');
+                    loginBox.classList.remove('hidden');
+                } else {
+                    alert(data.message || 'Error al registrar el usuario.');
+                }
+            } catch (error) {
+                console.error("Error en registro:", error);
+                alert('No se pudo conectar con el servidor de Render.');
+            }
+        });
+    }
+
+    // ==========================================
+    // PROCESO DE INICIO DE SESIÓN (LOGIN)
+    // ==========================================
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const correo = document.getElementById('login-email').value.trim();
+            const contrasena = document.getElementById('login-password').value.trim();
+
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ correo, contrasena })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    alert("¡Bienvenido! " + data.usuario.nombre);
+
+                    // 1. Ocultar la sección de autenticación completa
+                    authSection.classList.add('hidden');
+
+                    // 2. Mostrar la tienda/catálogo de libros
+                    storeSection.classList.remove('hidden');
+
+                    // 3. Mostrar elementos del menú de navegación (Header)
+                    userDisplay.classList.remove('hidden');
+                    btnLogout.classList.remove('hidden');
+                    if (btnCartView) btnCartView.classList.remove('hidden');
+
+                    // 4. Colocar el nombre del usuario logueado en el texto
+                    usernameText.textContent = data.usuario.nombre;
+                } else {
+                    alert(data.message || 'Usuario o contraseña incorrectos.');
+                }
+            } catch (error) {
+                console.error("Error en login:", error);
+                alert('No se pudo conectar con el servidor de Render.');
+            }
+        });
+    }
+
+    // ==========================================
+    // PROCESO DE CERRAR SESIÓN
+    // ==========================================
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+            // Regresar todo a su estado inicial
+            authSection.classList.remove('hidden');
+            loginBox.classList.remove('hidden');
+            registerBox.classList.add('hidden');
+            
+            storeSection.classList.add('hidden');
+            userDisplay.classList.add('hidden');
+            btnLogout.classList.add('hidden');
+            if (btnCartView) btnCartView.classList.add('hidden');
+            
+            // Limpiar los inputs
+            if (loginForm) loginForm.reset();
+            if (registerForm) registerForm.reset();
+            
+            alert('Has cerrado sesión correctamente.');
+        });
+    }
 });
-
-app.get('/users/:userId/purchased', (req, res) => {
-  const query = `SELECT DISTINCT order_items.book_title FROM order_items 
-                 JOIN orders ON order_items.order_id = orders.id 
-                 WHERE orders.user_id = ?`;
-  db.all(query, [req.params.userId], (err, rows) => {
-    if (err) return res.json([]);
-    const titles = rows.map(r => r.book_title);
-    res.json(titles);
-  });
-});
-
-app.get('/admin/sales', (req, res) => {
-  db.all('SELECT * FROM orders ORDER BY id DESC', [], (err, orders) => {
-    if (err) return res.json([]);
-    res.json(orders || []);
-  });
-});
-
-app.delete('/admin/sales', (req, res) => {
-  db.serialize(() => {
-    db.run('DELETE FROM order_items', [], (err) => {
-      db.run('DELETE FROM orders', [], function(err) {
-        res.json({ success: true });
-      });
-    });
-  });
-});
-
-app.delete('/admin/sales/:id', (req, res) => {
-  const orderId = req.params.id;
-  db.serialize(() => {
-    db.run('DELETE FROM order_items WHERE order_id = ?', [orderId], () => {
-      db.run('DELETE FROM orders WHERE id = ?', [orderId], () => {
-        res.json({ success: true });
-      });
-    });
-  });
-});
-
-app.listen(PORT, () => console.log(`Servidor ejecutándose en http://localhost:${PORT}`));
