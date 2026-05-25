@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selectedBookForModal) {
       await addToCart(selectedBookForModal.id);
       document.getElementById('purchaseModal').style.display = 'none';
-      alert(`¡"${selectedBookForModal.title}" añadido al carrito!`);
+      abrirVistaCarrito(); // Cambia directo a la nueva vista de carrito al añadir
     }
   });
 
@@ -94,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       categoryButtons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      regresarAlCatalogo(); // Si cambia de categoría, vuelve al catálogo de inmediato
       filterBooks(document.getElementById('bookSearchInput').value.toLowerCase().trim());
     });
   });
@@ -136,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// FUNCIÓN PARA ALTERNAR VISIBILIDAD DE CONTRASEÑAS (OJO)
 function togglePasswordVisibility(inputId, buttonElement) {
   const input = document.getElementById(inputId);
   const icon = buttonElement.querySelector('i');
@@ -152,11 +152,126 @@ function togglePasswordVisibility(inputId, buttonElement) {
   }
 }
 
-function abrirModalCarritoManual() {
-  if (typeof toggleCart === "function") { toggleCart(); } 
-  else if (typeof renderCart === "function") { renderCart(); } 
-  else { alert("Abriendo tu carrito de compras..."); }
+// --- INTERCAMBIO DE VISTAS Y LOGICA DEL CARRITO INTEGRADO ---
+
+function abrirVistaCarrito() {
+  document.getElementById('customer-view').classList.add('hidden');
+  document.getElementById('cart-view').classList.remove('hidden');
+  renderizarVistaCarritoCompleta();
 }
+
+function regresarAlCatalogo() {
+  document.getElementById('cart-view').classList.add('hidden');
+  document.getElementById('customer-view').classList.remove('hidden');
+}
+
+async function renderizarVistaCarritoCompleta() {
+  const userId = localStorage.getItem('userId');
+  const container = document.getElementById('cartFullItemsList');
+  const subtotalLabel = document.getElementById('summarySubtotal');
+  const totalLabel = document.getElementById('summaryTotal');
+  
+  if(!container || !userId) return;
+
+  container.innerHTML = '<p style="color:#a0aec0; font-size:0.95rem;">Cargando tus libros...</p>';
+
+  try {
+    const res = await fetch(`${API_URL}/cart/${userId}`);
+    const cartItems = await res.json();
+    container.innerHTML = '';
+
+    if (cartItems.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center; padding:40px; border: 1px dashed #2d3748; border-radius:8px; background-color:#141923;">
+          <i class="fas fa-shopping-basket" style="font-size:2rem; color:#4a5568; margin-bottom:10px;"></i>
+          <p style="color:#a0aec0; font-size:0.95rem;">Tu carrito está actualmente vacío.</p>
+        </div>`;
+      subtotalLabel.textContent = "Q0.00";
+      totalLabel.textContent = "Q0.00";
+      return;
+    }
+
+    let totalSum = 0;
+
+    cartItems.forEach(item => {
+      const bookData = allBooksLocal.find(b => b.id === Number(item.book_id)) || item;
+      const price = parseFloat(bookData.price) || 0;
+      totalSum += price;
+
+      const itemRow = document.createElement('div');
+      itemRow.classList.add('cart-main-item');
+      itemRow.innerHTML = `
+        <img src="${bookData.image || 'https://via.placeholder.com/150'}" alt="Portada">
+        <div style="flex:1;">
+          <div style="font-size:1rem; font-weight:bold; color:white; margin-bottom:4px;">${bookData.title}</div>
+          <div style="font-size:0.85rem; color:#a0aec0;">Por ${bookData.author || 'Autor'}</div>
+        </div>
+        <div style="text-align:right; display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+          <div style="font-size:1.05rem; font-weight:bold; color:#00f5d4;">Q${price.toFixed(2)}</div>
+          <button onclick="eliminarDelCarritoCompleto(${item.id})" style="background:none; border:none; color:#e53e3e; cursor:pointer; font-size:0.9rem; padding:4px;" title="Remover producto"><i class="fas fa-trash-alt"></i></button>
+        </div>
+      `;
+      container.appendChild(itemRow);
+    });
+
+    subtotalLabel.textContent = `Q${totalSum.toFixed(2)}`;
+    totalLabel.textContent = `Q${totalSum.toFixed(2)}`;
+  } catch (error) {
+    console.error(error);
+    container.innerHTML = '<p style="color:#e53e3e; font-size:0.95rem;">Error al sincronizar con el servidor del carrito.</p>';
+  }
+}
+
+async function eliminarDelCarritoCompleto(cartItemId) {
+  try {
+    await fetch(`${API_URL}/cart/${cartItemId}`, { method: 'DELETE' });
+    renderizarVistaCarritoCompleta();
+    updateCartCount();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function procesarCompraFinal() {
+  const userId = localStorage.getItem('userId');
+  const userEmail = localStorage.getItem('userEmail');
+  
+  try {
+    const resCart = await fetch(`${API_URL}/cart/${userId}`);
+    const cartItems = await resCart.json();
+
+    if (cartItems.length === 0) {
+      alert("No hay artículos añadidos para comprar.");
+      return;
+    }
+
+    for (const item of cartItems) {
+      const bookData = allBooksLocal.find(b => b.id === Number(item.book_id)) || item;
+      await fetch(`${API_URL}/admin/sales`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_email: userEmail,
+          book_id: item.book_id,
+          title: bookData.title,
+          price: bookData.price
+        })
+      });
+      await fetch(`${API_URL}/cart/${item.id}`, { method: 'DELETE' });
+    }
+
+    alert("¡Pago simulado correctamente! Los libros seleccionados ya se encuentran disponibles.");
+    regresarAlCatalogo();
+    updateCartCount();
+    await loadUserPurchases();
+    renderBooks(allBooksLocal);
+  } catch (error) {
+    console.error("Error en la pasarela:", error);
+    alert("Inconveniente al conectar con la base de datos de cobro.");
+  }
+}
+
+// --- FIN NUEVA LOGICA DE SECCIÓN ---
 
 async function checkSession() {
   const userId = localStorage.getItem('userId');
@@ -175,6 +290,7 @@ async function checkSession() {
     if (userRole === 'admin') {
       document.getElementById('admin-view').classList.remove('hidden');
       document.getElementById('customer-view').classList.add('hidden');
+      document.getElementById('cart-view').classList.add('hidden');
       if(cartButton) cartButton.style.display = 'none';
       loadCatalog();
     } else {
@@ -222,7 +338,6 @@ async function loadCatalog() {
   }
 }
 
-// CONTROL DINÁMICO EXCLUSIVO DE MENSAJES DE ESTADO VACÍO O NO ENCONTRADO
 function renderBooks(booksList) {
   const container = document.getElementById('booksContainer');
   const noBooksFoundMessage = document.getElementById('noBooksFoundMessage');
@@ -260,17 +375,13 @@ function renderBooks(booksList) {
     container.appendChild(card);
   });
 
-  // Lógica de visualización exacta solicitada
   if (allBooksLocal.length === 0) {
-    // Caso A: No hay ningún libro en la base de datos (tienda vacía)
     if(emptyStoreMessage) emptyStoreMessage.style.display = 'block';
     if(noBooksFoundMessage) noBooksFoundMessage.style.display = 'none';
   } else if (visibleBooksCount === 0 && searchInput !== '') {
-    // Caso B: Hay libros en la tienda, pero la consulta ingresada no trajo ningún resultado
     if(emptyStoreMessage) emptyStoreMessage.style.display = 'none';
     if(noBooksFoundMessage) noBooksFoundMessage.style.display = 'block';
   } else {
-    // Caso C: Todo en orden, se listan los resultados
     if(emptyStoreMessage) emptyStoreMessage.style.display = 'none';
     if(noBooksFoundMessage) noBooksFoundMessage.style.display = 'none';
   }
