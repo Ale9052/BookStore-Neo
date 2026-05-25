@@ -44,9 +44,7 @@
           </div>
           <div class="form-group">
             <label>CONTRASEÑA</label>
-            <div class="password-wrapper">
-              <input type="password" id="loginPassword" placeholder="••••••••" required>
-            </div>
+            <input type="password" id="loginPassword" placeholder="••••••••" required>
           </div>
           <button type="submit" class="btn-submit">Iniciar Sesión</button>
         </form>
@@ -67,7 +65,7 @@
             <input type="email" id="registerEmail" placeholder="ejemplo@gmail.com" required>
           </div>
           <div class="form-group">
-            <label>CONTRASEÑA DE LA PLATAFORMA (MÍNIMO 6 CARACTERES)</label>
+            <label>CONTRASEÑA DE LA PLATAFORMA</label>
             <input type="password" id="registerPassword" placeholder="Mínimo 6 caracteres" minlength="6" required>
           </div>
           <button type="submit" class="btn-submit">Registrarse</button>
@@ -88,7 +86,7 @@
         <div class="categories-container">
           <button class="btn-category active" data-category="Todos">🌐 Todos los libros</button>
           <button class="btn-category" data-category="Programación">💻 Programación</button>
-          <button class="btn-category" data-category="Fantasía">🧜‍♂️ Fantasía</button>
+          <button class="btn-category" data-category="Fantasía">🧙‍♂️ Fantasía</button>
           <button class="btn-category" data-category="Terror">👻 Terror</button>
           <button class="btn-category" data-category="Superación">📈 Superación</button>
           <button class="btn-category" data-category="Ciencia Ficción">🚀 Ciencia Ficción</button>
@@ -98,6 +96,11 @@
       </div>
 
       <div id="admin-view" class="view-section hidden">
+        <div class="catalog-header">
+          <h2>Panel de Administración</h2>
+          <p>Gestiona los libros y revisa las estadísticas de la librería</p>
+        </div>
+
         <div class="admin-grid">
           
           <div class="admin-card">
@@ -115,7 +118,7 @@
                 <label>CATEGORÍA</label>
                 <select id="adminCategory" required>
                   <option value="Programación">💻 Programación</option>
-                  <option value="Fantasía">🧜‍♂️ Fantasía</option>
+                  <option value="Fantasía">🧙‍♂️ Fantasía</option>
                   <option value="Terror">👻 Terror</option>
                   <option value="Superación">📈 Superación</option>
                   <option value="Ciencia Ficción">🚀 Ciencia Ficción</option>
@@ -130,38 +133,58 @@
                 <input type="url" id="adminImage" placeholder="https://..." required>
               </div>
               <div class="form-group">
-                <label>ENLACE DEL LIBRO COMPLETO (SOLO COMPRADORES/ADMIN)</label>
-                <input type="url" id="adminLink" placeholder="Ej: https://drive.google.com/.../view" required>
+                <label>ENLACE DEL LIBRO COMPLETO (PDF/DRIVE)</label>
+                <input type="url" id="adminLink" placeholder="Ej: https://drive.google.com/..." required>
               </div>
-              <button type="submit" class="btn-submit">Guardar Libro en Catálogo</button>
+              <button type="submit" class="btn-submit">Publicar Libro</button>
             </form>
           </div>
 
           <div class="admin-card">
-            <div class="card-header-inline">
-              <h3>Historial de Ventas Globales</h3>
-              <button id="clearSalesBtn" class="btn-clear"><i class="fas fa-trash"></i> Limpiar Historial</button>
-            </div>
-            <p class="tip">💡 Tip: El sistema registra de forma automática los pagos entrantes.</p>
-            
+            <h3>Inventario de Libros Publicados</h3>
+            <p class="tip">Aquí puedes ver, controlar y eliminar los libros disponibles en el catálogo.</p>
             <div class="table-container">
               <table class="admin-table">
                 <thead>
                   <tr>
-                    <th>ID Orden</th>
-                    <th>Cliente</th>
-                    <th>Fecha y Hora</th>
-                    <th>Total</th>
-                    <th>Estado</th>
+                    <th>Portada</th>
+                    <th>Título / Autor</th>
+                    <th>Categoría</th>
+                    <th>Precio</th>
+                    <th>Acciones</th>
                   </tr>
                 </thead>
-                <tbody id="salesLogTableBody">
+                <tbody id="inventoryTableBody">
                   </tbody>
               </table>
             </div>
           </div>
 
         </div>
+
+        <div class="admin-card" style="margin-top: 2rem;">
+          <div class="card-header-inline">
+            <h3>Historial de Ventas Globales</h3>
+            <button id="clearSalesBtn" class="btn-clear"><i class="fas fa-trash"></i> Limpiar Historial</button>
+          </div>
+          <p class="tip">💡 Tip: El sistema registra de forma automática los pagos entrantes.</p>
+          <div class="table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>ID Orden</th>
+                  <th>Cliente</th>
+                  <th>Fecha y Hora</th>
+                  <th>Total</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="salesLogTableBody">
+                </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
 
     </section>
