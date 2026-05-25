@@ -14,10 +14,12 @@
       <div class="logo">BookStore<span class="dot">.</span></div>
       
       <div id="header-controls" class="header-controls hidden">
-        <div class="search-bar" style="position: relative; display: inline-block; width: 100%; max-width: 500px;">
-  <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #a0aec0; pointer-events: none; z-index: 10;"></i>
-  <input type="text" id="bookSearchInput" placeholder="Buscar tu próxima lectura por título o autor..." style="width: 100%; padding: 10px 15px 10px 40px; border-radius: 20px; border: 1px solid #2d3748; background-color: #1a202c; color: white; box-sizing: border-box;">
-</div>
+        
+        <div class="search-bar" style="position: relative !important; display: inline-block !important; width: 100% !important; max-width: 500px !important;">
+          <i class="fas fa-search" style="position: absolute !important; left: 15px !important; top: 50% !important; transform: translateY(-50%) !important; color: #a0aec0 !important; pointer-events: none !important; z-index: 999 !important; margin: 0 !important; padding: 0 !important; font-size: 1rem !important;"></i>
+          <input type="text" id="bookSearchInput" placeholder="Buscar tu próxima lectura por título o autor..." style="width: 100% !important; padding: 10px 15px 10px 42px !important; border-radius: 20px !important; border: 1px solid #2d3748 !important; background-color: #1a202c !important; color: white !important; box-sizing: border-box !important;">
+        </div>
+
         <div class="user-menu">
           <span id="userGreeting" class="user-email"></span>
           <button id="cartBtn" class="btn-cart customer-only">
@@ -137,9 +139,10 @@
                 <label>ENLACE DEL LIBRO COMPLETO (PDF/DRIVE)</label>
                 <input type="url" id="adminLink" placeholder="Ej: https://drive.google.com/..." required>
               </div>
-              <div class="admin-button-group" style="display: flex; gap: 10px; margin-top: 1rem;">
+              
+              <div class="admin-button-group" style="display: flex; gap: 10px; margin-top: 1.5rem;">
                 <button type="submit" id="btnAdminSubmit" class="btn-submit" style="flex: 2;">Publicar Libro</button>
-                <button type="button" id="btnClearFormFields" class="btn-clear" style="flex: 1; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;"><i class="fas fa-eraser"></i> Vaciar Campos</button>
+                <button type="button" id="btnClearFormFields" class="btn-clear" style="flex: 1; background-color: #4a5568; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9rem;"><i class="fas fa-eraser"></i> Vaciar</button>
               </div>
             </form>
           </div>
@@ -147,7 +150,7 @@
           <div class="admin-card">
             <div class="card-header-inline" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
               <h3>Inventario de Libros</h3>
-              <button id="clearAllBooksBtn" class="btn-clear" style="background-color: #dc3545; color: white; border: none; padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; cursor: pointer;"><i class="fas fa-dumpster"></i> Borrar Todo</button>
+              <button id="clearAllBooksBtn" class="btn-clear" style="background-color: #dc3545; color: white; border: none; padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; cursor: pointer; font-weight: bold;"><i class="fas fa-dumpster"></i> Borrar Todo</button>
             </div>
             <p class="tip">Aquí puedes ver, controlar, editar y eliminar los libros disponibles.</p>
             <div class="table-container">
@@ -170,9 +173,9 @@
         </div>
 
         <div class="admin-card" style="margin-top: 2rem;">
-          <div class="card-header-inline">
+          <div class="card-header-inline" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h3>Historial de Ventas Globales</h3>
-            <button id="clearSalesBtn" class="btn-clear"><i class="fas fa-trash"></i> Limpiar Historial</button>
+            <button id="clearSalesBtn" class="btn-clear" style="background-color: #718096; color: white; border: none; padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; cursor: pointer;"><i class="fas fa-trash"></i> Limpiar Historial</button>
           </div>
           <p class="tip">💡 Tip: El sistema registra de forma automática los pagos entrantes.</p>
           <div class="table-container">
