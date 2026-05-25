@@ -1,8 +1,8 @@
 const API_URL = "https://bookstore-neo.onrender.com"; 
 let allBooksLocal = [];
-let userPaidBookIds = []; // Almacena los IDs de los libros que el usuario ya compró
+let userPaidBookIds = []; 
 let isEditing = false; 
-let selectedBookForModal = null; // Guarda el libro activo temporalmente
+let selectedBookForModal = null; 
 
 document.addEventListener('DOMContentLoaded', () => {
   checkSession();
@@ -19,16 +19,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('login-box').classList.remove('hidden');
   });
 
+  // CONTROLADOR DE BÚSQUEDA CORREGIDO CON MENSAJE DE ERROR
   document.getElementById('bookSearchInput').addEventListener('input', (e) => {
     filterBooks(e.target.value.toLowerCase().trim());
   });
 
-  // BOTÓN DE ACCIÓN COMPRAR DENTRO DEL MODAL
   document.getElementById('modalAddToCartBtn').addEventListener('click', async () => {
     if (selectedBookForModal) {
       await addToCart(selectedBookForModal.id);
       document.getElementById('purchaseModal').style.display = 'none';
-      alert(`¡"${selectedBookForModal.title}" añadido al carrito! Revisa tu carrito arriba para completar el pago.`);
+      alert(`¡"${selectedBookForModal.title}" añadido al carrito! Completa tu pago desde el botón superior.`);
     }
   });
 
@@ -74,14 +74,14 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await res.json();
       if (data.success) {
-        alert('¡Cuenta creada con éxito! Ya puedes iniciar sesión.');
+        alert('¡Cuenta creada con éxito!');
         document.getElementById('register-box').classList.add('hidden');
         document.getElementById('login-box').classList.remove('hidden');
       } else {
         alert(data.message);
       }
     } catch (error) {
-      console.error("Error en registro:", error);
+      console.error(error);
     }
   });
 
@@ -135,67 +135,66 @@ document.addEventListener('DOMContentLoaded', () => {
       loadCatalog();
     }
   });
-
-  document.getElementById('clearSalesBtn').addEventListener('click', async () => {
-    if(confirm('¿Vanciar el historial de ventas?')) {
-      await fetch(`${API_URL}/admin/sales`, { method: 'DELETE' });
-      loadAdminSales();
-    }
-  });
 });
 
+// CONTROLADOR DE SESIONES CORREGIDO (PREVIENE VISUALIZACIÓN PREVIA)
 async function checkSession() {
   const userId = localStorage.getItem('userId');
   const userRole = localStorage.getItem('userRole');
   const userEmail = localStorage.getItem('userEmail');
 
+  const headerControls = document.getElementById('header-controls');
+  const cartButton = document.getElementById('cartBtn');
+
   if (userId) {
+    // 1. Mostrar barra superior completa (Buscador y menú)
+    headerControls.classList.remove('hidden');
     document.getElementById('auth-section').classList.add('hidden');
     document.getElementById('app-content').classList.remove('hidden');
-    document.getElementById('header-controls').classList.remove('hidden');
     document.getElementById('userGreeting').textContent = userEmail;
 
     if (userRole === 'admin') {
       document.getElementById('admin-view').classList.remove('hidden');
       document.getElementById('customer-view').classList.add('hidden');
-      const clientElements = document.querySelectorAll('.customer-only');
-      clientElements.forEach(el => el.style.display = 'none');
+      
+      // Ocultar carrito de forma estricta al admin en cualquier dispositivo
+      if(cartButton) cartButton.style.setProperty('display', 'none', 'important');
+      
       loadCatalog();
-      loadAdminSales();
     } else {
       document.getElementById('admin-view').classList.add('hidden');
       document.getElementById('customer-view').classList.remove('hidden');
-      await loadUserPurchases(); // Cargar qué libros compró este cliente
+      
+      // Mostrar el carrito de forma estricta e inline al cliente
+      if(cartButton) cartButton.style.setProperty('display', 'inline-flex', 'important');
+      
+      await loadUserPurchases(); 
       loadCatalog(); 
       updateCartCount();
     }
   } else {
+    // Si no hay sesión, esconder buscador, carrito y saludo por completo
+    headerControls.classList.add('hidden');
+    if(cartButton) cartButton.style.setProperty('display', 'none', 'important');
+    
     document.getElementById('auth-section').classList.remove('hidden');
     document.getElementById('app-content').classList.add('hidden');
-    document.getElementById('header-controls').classList.add('hidden');
   }
 }
 
-// OBTENER HISTORIAL DE COMPRAS DEL CLIENTE LOGUEADO
 async function loadUserPurchases() {
   const userEmail = localStorage.getItem('userEmail');
   try {
     const res = await fetch(`${API_URL}/admin/sales`);
     const sales = await res.json();
-    // Filtramos las ventas pagadas por este usuario en específico
     const myPurchases = sales.filter(sale => sale.user_email === userEmail);
     
-    // Suponiendo que tu backend guarda un string de IDs o que registras el catálogo,
-    // extraemos los libros válidos. Para máxima robustez, si tu orden registra compras,
-    // mapeamos los libros comprados aquí.
     userPaidBookIds = [];
     myPurchases.forEach(sale => {
-       // Si tu backend no asocia IDs específicos por venta individual, asumimos acceso global por compra,
-       // o si guarda una propiedad .book_id la extrae. Si es por orden general, desbloqueamos los del sistema:
        if(sale.book_id) userPaidBookIds.push(Number(sale.book_id));
     });
   } catch (e) {
-    console.error("Error cargando compras del usuario:", e);
+    console.error(e);
   }
 }
 
@@ -210,19 +209,22 @@ async function loadCatalog() {
   }
 }
 
-// RENDERIZAR EN ENTORNO ADAPTABLE (REDISEÑO DE CONDICIONALES DE CANDADO)
 function renderBooks(booksList) {
   const container = document.getElementById('booksContainer');
+  const noBooksMessage = document.getElementById('noBooksMessage');
   if(!container) return;
   container.innerHTML = '';
   
   const activeCategory = document.querySelector('.btn-category.active').getAttribute('data-category');
   const userRole = localStorage.getItem('userRole');
 
+  let visibleBooksCount = 0;
+
   booksList.forEach(book => {
     if (activeCategory !== 'Todos' && book.category !== activeCategory) return;
 
-    // Verificamos si el usuario ya compró este ID o si es administrador (tiene acceso total)
+    visibleBooksCount++;
+
     const hasAccess = userRole === 'admin' || userPaidBookIds.includes(Number(book.id));
     const lockIcon = hasAccess ? "🔓 Ver Libro Completo" : "🔒 Ver Libro Completo";
 
@@ -241,9 +243,15 @@ function renderBooks(booksList) {
     `;
     container.appendChild(card);
   });
+
+  // SI NO HAY LIBROS COINCIDENTES MOSTRAR EL MENSAJE EN PANTALLA
+  if (visibleBooksCount === 0) {
+    if(noBooksMessage) noBooksMessage.style.display = 'block';
+  } else {
+    if(noBooksMessage) noBooksMessage.style.display = 'none';
+  }
 }
 
-// MANEJADOR INTELIGENTE DEL BOTÓN ÚNICO
 function handleBookAccess(bookId) {
   const book = allBooksLocal.find(b => b.id === bookId);
   if (!book) return;
@@ -252,10 +260,8 @@ function handleBookAccess(bookId) {
   const hasAccess = userRole === 'admin' || userPaidBookIds.includes(Number(book.id));
 
   if (hasAccess) {
-    // Si ya pagó, lo manda directo al PDF/Drive sin molestar
     window.open(book.full_link, '_blank');
   } else {
-    // Si no ha pagado, abre la advertencia y guarda el libro temporalmente
     selectedBookForModal = book;
     document.getElementById('purchaseModal').style.display = 'flex';
   }
@@ -282,6 +288,12 @@ function renderInventoryTable(booksList) {
     `;
     tableBody.appendChild(tr);
   });
+}
+
+// FILTRADO ADAPTADO PARA LANZAR EL MENSAJE DE ADVERTENCIA SI QUEDA VACÍO
+function filterBooks(search) {
+  const filtered = allBooksLocal.filter(b => b.title.toLowerCase().includes(search) || b.author.toLowerCase().includes(search));
+  renderBooks(filtered);
 }
 
 function startEditBook(id) {
@@ -311,11 +323,6 @@ function resetAdminForm() {
   document.getElementById('btnAdminSubmit').textContent = "Publicar Libro";
 }
 
-function filterBooks(search) {
-  const filtered = allBooksLocal.filter(b => b.title.toLowerCase().includes(search) || b.author.toLowerCase().includes(search));
-  renderBooks(filtered);
-}
-
 async function addToCart(bookId) {
   const userId = localStorage.getItem('userId');
   await fetch(`${API_URL}/cart`, {
@@ -342,28 +349,5 @@ async function deleteBook(id) {
   if (confirm('¿Eliminar este libro definitivamente?')) {
     await fetch(`${API_URL}/books/${id}`, { method: 'DELETE' });
     loadCatalog();
-  }
-}
-
-async function loadAdminSales() {
-  try {
-    const res = await fetch(`${API_URL}/admin/sales`);
-    const sales = await res.json();
-    const tbody = document.getElementById('salesLogTableBody');
-    if(!tbody) return;
-    tbody.innerHTML = '';
-    sales.forEach(sale => {
-      tbody.innerHTML += `
-        <tr>
-          <td><strong>#${sale.id}</strong></td>
-          <td>${sale.user_email}</td>
-          <td>${sale.date || 'Reciente'}</td>
-          <td style="color:#00f5d4; font-weight:bold;">Q${sale.total.toFixed(2)}</td>
-          <td><span class="status-badge">Pagado</span></td>
-        </tr>
-      `;
-    });
-  } catch (error) {
-    console.error(error);
   }
 }
