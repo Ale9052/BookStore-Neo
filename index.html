@@ -14,10 +14,10 @@
       <div class="logo">BookStore<span class="dot">.</span></div>
       
       <div id="header-controls" class="header-controls hidden">
-        <div class="search-bar">
-          <i class="fas fa-search"></i>
-          <input type="text" id="bookSearchInput" placeholder="Buscar tu próxima lectura por título o autor...">
-        </div>
+        <div class="search-bar" style="position: relative; display: inline-block; width: 100%; max-width: 500px;">
+  <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #a0aec0; pointer-events: none; z-index: 10;"></i>
+  <input type="text" id="bookSearchInput" placeholder="Buscar tu próxima lectura por título o autor..." style="width: 100%; padding: 10px 15px 10px 40px; border-radius: 20px; border: 1px solid #2d3748; background-color: #1a202c; color: white; box-sizing: border-box;">
+</div>
         <div class="user-menu">
           <span id="userGreeting" class="user-email"></span>
           <button id="cartBtn" class="btn-cart customer-only">
