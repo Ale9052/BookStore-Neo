@@ -1,5 +1,5 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const sqlite3 = require('sqlite3-offline').verbose(); // Solución al error ERR_DLOPEN_FAILED
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path'); 
@@ -11,12 +11,11 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(__dirname));
 
-// Servir el index.html en la raíz
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Ruta segura para la base de datos en los servidores de Render
+// Ruta persistente/temporal en Render
 const dbPath = path.join('/tmp', 'libreria.db');
 const db = new sqlite3.Database(dbPath);
 
@@ -55,7 +54,7 @@ db.serialize(() => {
     user_email TEXT,
     total REAL,
     date TEXT,
-    status TEXT DEFAULT 'Completado'
+    status TEXT DEFAULT 'Pagado'
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS order_items (
@@ -66,22 +65,21 @@ db.serialize(() => {
     FOREIGN KEY(order_id) REFERENCES orders(id)
   )`);
 
-  // Crear al administrador automáticamente apenas se monte el servidor
+  // Administrador por defecto
   const adminEmail = 'admin@gmail.com';
   const adminPassword = 'admin123';
   db.get('SELECT * FROM users WHERE email = ?', [adminEmail], (err, row) => {
     if (!row) {
-      db.run('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', ['Administrador', adminEmail, adminPassword, 'admin']);
+      db.run('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', ['Admin', adminEmail, adminPassword, 'admin']);
     }
   });
 });
 
-// --- RUTAS DE AUTENTICACIÓN ---
-
+// --- AUTENTICACIÓN ---
 app.post('/register', (req, res) => {
   const { name, email, password } = req.body;
   db.run('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, password], function(err) {
-    if (err) return res.json({ success: false, message: 'El correo electrónico ya está registrado.' });
+    if (err) return res.json({ success: false, message: 'El correo ya está registrado.' });
     res.json({ success: true, userId: this.lastID, role: 'user', name: name });
   });
 });
@@ -89,15 +87,7 @@ app.post('/register', (req, res) => {
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
   if (email === 'admin@gmail.com' && password === 'admin123') {
-    db.get('SELECT * FROM users WHERE email = ?', [email], (err, row) => {
-      if (row) {
-        res.json({ success: true, userId: row.id, role: 'admin', name: row.name || 'Admin' });
-      } else {
-        db.run('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', ['Administrador', email, password, 'admin'], function() {
-          res.json({ success: true, userId: this.lastID, role: 'admin', name: 'Administrador' });
-        });
-      }
-    });
+    res.json({ success: true, userId: 1, role: 'admin', name: 'Admin' });
     return;
   }
   db.get('SELECT * FROM users WHERE email = ? AND password = ?', [email, password], (err, row) => {
@@ -107,7 +97,6 @@ app.post('/login', (req, res) => {
 });
 
 // --- RUTAS DE LIBROS ---
-
 app.get('/books', (req, res) => {
   db.all('SELECT * FROM books', [], (err, rows) => {
     if (err) return res.json([]);
@@ -124,15 +113,6 @@ app.post('/books', (req, res) => {
   });
 });
 
-app.put('/books/:id', (req, res) => {
-  const { title, author, category, price, image, full_link, badge } = req.body;
-  db.run('UPDATE books SET title=?, author=?, category=?, price=?, image=?, full_link=?, badge=? WHERE id=?',
-    [title, author, category, price, image, full_link, badge, req.params.id], function(err) {
-      if (err) return res.json({ success: false });
-      res.json({ success: true });
-  });
-});
-
 app.delete('/books/:id', (req, res) => {
   db.run('DELETE FROM books WHERE id = ?', [req.params.id], function(err) {
     if (err) return res.json({ success: false });
@@ -141,7 +121,6 @@ app.delete('/books/:id', (req, res) => {
 });
 
 // --- RUTAS DEL CARRITO ---
-
 app.get('/cart/:userId', (req, res) => {
   const query = `SELECT cart.id as cartItemId, books.id as id, books.title, books.author, books.price, books.image, cart.quantity 
                  FROM cart JOIN books ON cart.book_id = books.id WHERE cart.user_id = ?`;
@@ -153,96 +132,25 @@ app.get('/cart/:userId', (req, res) => {
 
 app.post('/cart', (req, res) => {
   const { user_id, book_id } = req.body;
-  db.get('SELECT * FROM cart WHERE user_id = ? AND book_id = ?', [user_id, book_id], (err, row) => {
-    if (row) {
-      db.run('UPDATE cart SET quantity = quantity + 1 WHERE id = ?', [row.id], function() {
-        res.json({ success: true });
-      });
-    } else {
-      db.run('INSERT INTO cart (user_id, book_id, quantity) VALUES (?, ?, 1)', [user_id, book_id], function() {
-        res.json({ success: true });
-      });
-    }
-  });
-});
-
-app.put('/cart/:cartItemId', (req, res) => {
-  const { quantity } = req.body;
-  db.run('UPDATE cart SET quantity = ? WHERE id = ?', [quantity, req.params.cartItemId], function() {
+  db.run('INSERT INTO cart (user_id, book_id) VALUES (?, ?)', [user_id, book_id], function() {
     res.json({ success: true });
   });
 });
 
-app.delete('/cart/:cartItemId', (req, res) => {
-  db.run('DELETE FROM cart WHERE id = ?', [req.params.cartItemId], function() {
-    res.json({ success: true });
-  });
-});
-
-// --- RUTAS DE ÓRDENES ---
-
-app.post('/orders', (req, res) => {
-  const { userId, userEmail, total, items } = req.body;
-  const dateStr = new Date().toLocaleString('es-GT', { timeZone: 'America/Guatemala' });
-
-  db.run('INSERT INTO orders (user_id, user_email, total, date) VALUES (?, ?, ?, ?)', [userId, userEmail, total, dateStr], function(err) {
-    if (err) return res.json({ success: false });
-    const orderId = this.lastID;
-
-    db.serialize(() => {
-      const stmt = db.prepare('INSERT INTO order_items (order_id, book_title, quantity) VALUES (?, ?, ?)');
-      items.forEach(item => {
-        stmt.run(orderId, item.title, item.quantity);
-      });
-      stmt.finalize();
-
-      db.run('DELETE FROM cart WHERE user_id = ?', [userId], () => {
-        res.json({ success: true });
-      });
-    });
-  });
-});
-
-app.get('/users/:userId/purchased', (req, res) => {
-  const query = `SELECT DISTINCT order_items.book_title FROM order_items 
-                 JOIN orders ON order_items.order_id = orders.id 
-                 WHERE orders.user_id = ?`;
-  db.all(query, [req.params.userId], (err, rows) => {
-    if (err) return res.json([]);
-    const titles = rows.map(r => r.book_title);
-    res.json(titles);
-  });
-});
-
-// --- RUTAS DE ADMINISTRACIÓN ---
-
+// --- HISTORIAL DE VENTAS ---
 app.get('/admin/sales', (req, res) => {
-  db.all('SELECT * FROM orders ORDER BY id DESC', [], (err, orders) => {
+  db.all('SELECT * FROM orders ORDER BY id DESC', [], (err, rows) => {
     if (err) return res.json([]);
-    res.json(orders || []);
+    res.json(rows);
   });
 });
 
 app.delete('/admin/sales', (req, res) => {
-  db.serialize(() => {
-    db.run('DELETE FROM order_items', [], () => {
-      db.run('DELETE FROM orders', [], function() {
-        res.json({ success: true });
-      });
-    });
-  });
-});
-
-app.delete('/admin/sales/:id', (req, res) => {
-  db.serialize(() => {
-    db.run('DELETE FROM order_items WHERE order_id = ?', [req.params.id], () => {
-      db.run('DELETE FROM orders WHERE id = ?', [req.params.id], function() {
-        res.json({ success: true });
-      });
-    });
+  db.run('DELETE FROM orders', [], () => {
+    res.json({ success: true });
   });
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor ejecutándose correctamente en el puerto ${PORT}`);
+  console.log(`Servidor corriendo en puerto ${PORT}`);
 });
