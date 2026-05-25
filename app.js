@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selectedBookForModal) {
       await addToCart(selectedBookForModal.id);
       document.getElementById('purchaseModal').style.display = 'none';
-      alert(`¡"${selectedBookForModal.title}" añadido al carrito! Completa tu pago haciendo clic en el botón verde "Mi Carrito" arriba.`);
+      alert(`¡"${selectedBookForModal.title}" añadido al carrito!`);
     }
   });
 
@@ -136,24 +136,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// FUNCIÓN MANUAL PARA MANEJAR EL CLIC DEL CARRITO DESDE CUALQUIER DISPOSITIVO
 function abrirModalCarritoManual() {
-  const userId = localStorage.getItem('userId');
-  if (!userId) return;
-  
-  // Aquí llamamos directamente a la función que abre tu modal o interfaz de carrito.
-  // Asegúrate de que esta función coincida con tu lógica de renderizado del carrito:
-  if (typeof toggleCart === "function") {
-    toggleCart(); 
-  } else if (typeof renderCart === "function") {
-    renderCart();
-  } else {
-    // Si tu código maneja el carrito abriendo una sección específica o alerta:
-    alert("Abriendo tu carrito de compras...");
-  }
+  if (typeof toggleCart === "function") { toggleCart(); } 
+  else if (typeof renderCart === "function") { renderCart(); } 
+  else { alert("Abriendo tu carrito de compras..."); }
 }
 
-// MANEJO IMPLACABLE DE SESIONES (APLICANDO ESTILOS INLINE DINÁMICOS)
+// CONTROL DE SESIÓN SIN ENMASCARAMIENTOS DE CSS EXTERNO
 async function checkSession() {
   const userId = localStorage.getItem('userId');
   const userRole = localStorage.getItem('userRole');
@@ -163,8 +152,8 @@ async function checkSession() {
   const cartButton = document.getElementById('cartBtn');
 
   if (userId) {
-    // 1. Mostrar barra superior completa forzando Flexbox en línea
-    headerControls.style.setProperty('display', 'flex', 'important');
+    // Forzamos visibilidad explícita usando la propiedad flex
+    headerControls.style.display = 'flex';
     document.getElementById('auth-section').classList.add('hidden');
     document.getElementById('app-content').classList.remove('hidden');
     document.getElementById('userGreeting').textContent = userEmail;
@@ -172,23 +161,21 @@ async function checkSession() {
     if (userRole === 'admin') {
       document.getElementById('admin-view').classList.remove('hidden');
       document.getElementById('customer-view').classList.add('hidden');
-      if(cartButton) cartButton.style.setProperty('display', 'none', 'important');
+      if(cartButton) cartButton.style.display = 'none';
       loadCatalog();
     } else {
       document.getElementById('admin-view').classList.add('hidden');
       document.getElementById('customer-view').classList.remove('hidden');
-      
-      // Mostrar el carrito al cliente de forma forzada e inequívoca
-      if(cartButton) cartButton.style.setProperty('display', 'inline-flex', 'important');
+      if(cartButton) cartButton.style.display = 'inline-flex';
       
       await loadUserPurchases(); 
       loadCatalog(); 
       updateCartCount();
     }
   } else {
-    // Si no hay sesión iniciada, se destruye y oculta todo el bloque visual del header
-    headerControls.style.setProperty('display', 'none', 'important');
-    if(cartButton) cartButton.style.setProperty('display', 'none', 'important');
+    // Si no hay sesión, se esconde la barra por completo de raíz
+    headerControls.style.display = 'none';
+    if(cartButton) cartButton.style.display = 'none';
     
     document.getElementById('auth-section').classList.remove('hidden');
     document.getElementById('app-content').classList.add('hidden');
@@ -222,9 +209,13 @@ async function loadCatalog() {
   }
 }
 
+// MANEJO DE MENSAJES SEGÚN EL ESTADO DEL INPUT DE BÚSQUEDA
 function renderBooks(booksList) {
   const container = document.getElementById('booksContainer');
-  const noBooksMessage = document.getElementById('noBooksMessage');
+  const noBooksFoundMessage = document.getElementById('noBooksFoundMessage');
+  const emptyStoreMessage = document.getElementById('emptyStoreMessage');
+  const searchInput = document.getElementById('bookSearchInput').value.trim();
+
   if(!container) return;
   container.innerHTML = '';
   
@@ -235,7 +226,6 @@ function renderBooks(booksList) {
 
   booksList.forEach(book => {
     if (activeCategory !== 'Todos' && book.category !== activeCategory) return;
-
     visibleBooksCount++;
 
     const hasAccess = userRole === 'admin' || userPaidBookIds.includes(Number(book.id));
@@ -257,10 +247,19 @@ function renderBooks(booksList) {
     container.appendChild(card);
   });
 
-  if (visibleBooksCount === 0) {
-    if(noBooksMessage) noBooksMessage.style.display = 'block';
+  // Lógica de visualización de mensajes solicitada
+  if (allBooksLocal.length === 0) {
+    // Estado 1: La base de datos no tiene libros cargados en absoluto
+    if(emptyStoreMessage) emptyStoreMessage.style.display = 'block';
+    if(noBooksFoundMessage) noBooksFoundMessage.style.display = 'none';
+  } else if (visibleBooksCount === 0 && searchInput !== '') {
+    // Estado 2: Hay libros publicados, pero la búsqueda actual no coincide con ninguno
+    if(emptyStoreMessage) emptyStoreMessage.style.display = 'none';
+    if(noBooksFoundMessage) noBooksFoundMessage.style.display = 'block';
   } else {
-    if(noBooksMessage) noBooksMessage.style.display = 'none';
+    // Se muestran los libros correctamente, ocultamos advertencias
+    if(emptyStoreMessage) emptyStoreMessage.style.display = 'none';
+    if(noBooksFoundMessage) noBooksFoundMessage.style.display = 'none';
   }
 }
 
