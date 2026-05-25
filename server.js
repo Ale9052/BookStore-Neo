@@ -7,12 +7,16 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Conexión MongoDB
+app.use(cors());
+app.use(express.json());
+app.use(express.static(__dirname));
+
+// MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ Conectado a MongoDB Atlas'))
   .catch(err => console.error('❌ Error conectando a MongoDB:', err));
 
-// Esquemas
+// MODELOS
 const User = mongoose.model('User', new mongoose.Schema({
   name: String,
   email: String,
@@ -43,18 +47,12 @@ const Order = mongoose.model('Order', new mongoose.Schema({
   price: Number
 }));
 
-app.use(cors());
-app.use(express.json());
-app.use(express.static(__dirname));
-
-// ================= RUTAS =================
-
-// Inicio
+// HOME
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Registro
+// REGISTER
 app.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -80,42 +78,46 @@ app.post('/register', async (req, res) => {
       role: newUser.role,
       name: newUser.name
     });
+
   } catch (err) {
     res.status(500).json({ success: false });
   }
 });
 
-// Login
+// LOGIN
 app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email, password });
 
-    if (user) {
-      res.json({
-        success: true,
-        userId: user._id,
-        role: user.role,
-        name: user.name
-      });
-    } else {
-      res.json({
+    if (!user) {
+      return res.json({
         success: false,
         message: 'Credenciales incorrectas'
       });
     }
+
+    res.json({
+      success: true,
+      userId: user._id,
+      role: user.role,
+      name: user.name
+    });
+
   } catch (err) {
     res.status(500).json({ success: false });
   }
 });
+
+// ================= LIBROS =================
 
 // Obtener libros
 app.get('/books', async (req, res) => {
   try {
     const books = await Book.find();
     res.json(books);
-  } catch (err) {
+  } catch {
     res.status(500).json([]);
   }
 });
@@ -124,29 +126,21 @@ app.get('/books', async (req, res) => {
 app.post('/books', async (req, res) => {
   try {
     const newBook = await Book.create(req.body);
-
     res.json({
       success: true,
       bookId: newBook._id
     });
-  } catch (err) {
+  } catch {
     res.status(500).json({ success: false });
   }
 });
 
-// EDITAR libro
+// Editar libro
 app.put('/books/:id', async (req, res) => {
   try {
     const updatedBook = await Book.findByIdAndUpdate(
       req.params.id,
-      {
-        title: req.body.title,
-        author: req.body.author,
-        category: req.body.category,
-        price: req.body.price,
-        image: req.body.image,
-        full_link: req.body.full_link
-      },
+      req.body,
       { new: true }
     );
 
@@ -163,32 +157,32 @@ app.put('/books/:id', async (req, res) => {
     });
 
   } catch (err) {
-    console.error("ERROR EDITANDO:", err);
-    res.status(500).json({
-      success: false,
-      message: 'Error actualizando libro'
-    });
-  }
-});
-// ELIMINAR un libro
-app.delete('/books/:id', async (req, res) => {
-  try {
-    await Book.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false });
   }
 });
 
-// BORRAR TODO inventario
+// Eliminar un libro
+app.delete('/books/:id', async (req, res) => {
+  try {
+    await Book.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ success: false });
+  }
+});
+
+// Borrar TODO inventario
 app.delete('/admin/books/clear-all', async (req, res) => {
   try {
     await Book.deleteMany({});
     res.json({ success: true });
-  } catch (err) {
+  } catch {
     res.status(500).json({ success: false });
   }
 });
+
+// ================= CARRITO =================
 
 // Obtener carrito
 app.get('/cart/:userId', async (req, res) => {
@@ -197,7 +191,7 @@ app.get('/cart/:userId', async (req, res) => {
       user_id: req.params.userId
     });
     res.json(cartItems);
-  } catch (err) {
+  } catch {
     res.status(500).json([]);
   }
 });
@@ -207,27 +201,29 @@ app.post('/cart', async (req, res) => {
   try {
     await CartItem.create(req.body);
     res.json({ success: true });
-  } catch (err) {
+  } catch {
     res.status(500).json({ success: false });
   }
 });
 
-// Eliminar item del carrito
+// Eliminar del carrito
 app.delete('/cart/:id', async (req, res) => {
   try {
     await CartItem.findByIdAndDelete(req.params.id);
     res.json({ success: true });
-  } catch (err) {
+  } catch {
     res.status(500).json({ success: false });
   }
 });
+
+// ================= VENTAS =================
 
 // Registrar venta
 app.post('/admin/sales', async (req, res) => {
   try {
     await Order.create(req.body);
     res.json({ success: true });
-  } catch (err) {
+  } catch {
     res.status(500).json({ success: false });
   }
 });
@@ -237,7 +233,7 @@ app.get('/admin/sales', async (req, res) => {
   try {
     const sales = await Order.find();
     res.json(sales);
-  } catch (err) {
+  } catch {
     res.status(500).json([]);
   }
 });
