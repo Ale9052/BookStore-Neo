@@ -98,7 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // CORRECCIÓN: Lógica mejorada para manejar la edición y creación
   document.getElementById('adminBookForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('adminBookId').value;
@@ -122,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.success || data.message) {
         alert(isEditing ? "¡Libro actualizado!" : "¡Libro publicado!");
         resetAdminForm();
-        await loadCatalog(); // Recargamos el catálogo después de guardar
+        await loadCatalog(); 
       } else {
         alert("Error al guardar en base de datos.");
       }
@@ -134,8 +133,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('clearAllBooksBtn').addEventListener('click', async () => {
     if (confirm('⚠️ ¿Borrar todos los libros?')) {
-      await fetch(`${API_URL}/admin/books/clear-all`, { method: 'DELETE' });
-      loadCatalog();
+      try {
+        await fetch(`${API_URL}/admin/books/clear-all`, { method: 'DELETE' });
+        loadCatalog();
+      } catch (err) {
+        console.error(err);
+        alert("Error al borrar todo.");
+      }
     }
   });
 });
@@ -210,12 +214,15 @@ async function renderizarVistaCarritoCompleta() {
 }
 
 async function eliminarDelCarritoCompleto(cartItemId) {
-  await fetch(`${API_URL}/cart/${cartItemId}`, { method: 'DELETE' });
-  renderizarVistaCarritoCompleta();
-  updateCartCount();
+  try {
+    await fetch(`${API_URL}/cart/${cartItemId}`, { method: 'DELETE' });
+    renderizarVistaCarritoCompleta();
+    updateCartCount();
+  } catch (err) {
+    console.error(err);
+  }
 }
 
-// CORRECCIÓN: Actualización optimista para abrir el candado al instante
 async function procesarCompraFinal() {
   const userId = localStorage.getItem('userId');
   const userEmail = localStorage.getItem('userEmail');
@@ -243,7 +250,6 @@ async function procesarCompraFinal() {
         })
       });
 
-      // Actualización inmediata para que el candado se abra
       if (!userPaidBookIds.includes(Number(item.book_id))) {
         userPaidBookIds.push(Number(item.book_id));
       }
@@ -254,7 +260,7 @@ async function procesarCompraFinal() {
     alert("¡Pago exitoso!");
     regresarAlCatalogo();
     updateCartCount();
-    renderBooks(allBooksLocal); // Renderizado forzado con los nuevos permisos
+    renderBooks(allBooksLocal); 
   } catch (error) {
     console.error("Error:", error);
     alert("Ocurrió un error al procesar el pago.");
@@ -312,7 +318,7 @@ function renderBooks(booksList) {
   if(!container) return;
   container.innerHTML = '';
   
-  const activeCategory = document.querySelector('.btn-category.active').getAttribute('data-category');
+  const activeCategory = document.querySelector('.btn-category.active')?.getAttribute('data-category') || 'Todos';
 
   booksList.forEach(book => {
     if (activeCategory !== 'Todos' && book.category !== activeCategory) return;
@@ -401,24 +407,37 @@ function resetAdminForm() {
 
 async function addToCart(bookId) {
   const userId = localStorage.getItem('userId');
-  await fetch(`${API_URL}/cart`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, book_id: bookId })
-  });
-  updateCartCount();
+  try {
+    await fetch(`${API_URL}/cart`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, book_id: bookId })
+    });
+    updateCartCount();
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 async function updateCartCount() {
   const userId = localStorage.getItem('userId');
-  const res = await fetch(`${API_URL}/cart/${userId}`);
-  const cartItems = await res.json();
-  document.getElementById('cartCount').textContent = cartItems.length;
+  try {
+    const res = await fetch(`${API_URL}/cart/${userId}`);
+    const cartItems = await res.json();
+    document.getElementById('cartCount').textContent = cartItems.length;
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 async function deleteBook(id) {
   if (confirm('¿Eliminar libro?')) {
-    await fetch(`${API_URL}/books/${id}`, { method: 'DELETE' });
-    loadCatalog();
+    try {
+      await fetch(`${API_URL}/books/${id}`, { method: 'DELETE' });
+      loadCatalog();
+    } catch (err) {
+      console.error(err);
+      alert("Error al intentar borrar el libro.");
+    }
   }
 }
