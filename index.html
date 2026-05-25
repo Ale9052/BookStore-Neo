@@ -2,17 +2,19 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BookStore Neo</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <header>
-        <div class="logo" onclick="regresarAlCatalogo()" style="cursor:pointer;">BookStore.</div>
-        <nav id="header-controls" style="display:none;">
-            <button id="cartBtn" onclick="abrirVistaCarrito()"><i class="fas fa-shopping-cart"></i> (<span id="cartCount">0</span>)</button>
+    <header class="main-header">
+        <div class="logo" onclick="regresarAlCatalogo()">BookStore<span>.</span></div>
+        <div id="header-controls" style="display:none;">
+            <input type="text" id="bookSearchInput" placeholder="Buscar...">
+            <button id="cartBtn" onclick="abrirVistaCarrito()">Carrito (<span id="cartCount">0</span>)</button>
             <button id="logoutBtn" onclick="localStorage.clear(); location.reload();">Salir</button>
-        </nav>
+        </div>
     </header>
 
     <main>
@@ -27,6 +29,15 @@
         <section id="app-content" class="hidden">
             <div id="customer-view">
                 <div id="booksContainer"></div>
+            </div>
+            <div id="admin-view" class="hidden">
+                <form id="adminBookForm">
+                    <input type="text" id="adminTitle" placeholder="Título" required>
+                    <input type="text" id="adminAuthor" placeholder="Autor" required>
+                    <input type="number" id="adminPrice" placeholder="Precio" required>
+                    <button type="submit">Publicar</button>
+                </form>
+                <table id="inventoryTable"><thead><tr><th>Título</th><th>Acciones</th></tr></thead><tbody id="inventoryTableBody"></tbody></table>
             </div>
             <div id="cart-view" class="hidden">
                 <h2>Tu Carrito</h2>
