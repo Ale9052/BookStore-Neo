@@ -7,11 +7,17 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// Configuración de CORS Explícita para dar acceso completo a GitHub Pages
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type']
+}));
+
 app.use(bodyParser.json());
 app.use(express.static(__dirname));
 
-// Directorio temporal de Render para persistencia
+// Rutas de almacenamiento persistente en la instancia de Render
 const DATA_DIR = '/tmp';
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const BOOKS_FILE = path.join(DATA_DIR, 'books.json');
@@ -24,7 +30,7 @@ const initFile = (filePath, initialData) => {
   }
 };
 
-// Inicialización de archivos limpia
+// Crear archivos base si no existen con el usuario Administrador inicializado
 initFile(USERS_FILE, [{ id: 1, name: 'Admin', email: 'admin@gmail.com', password: 'admin123', role: 'admin' }]);
 initFile(BOOKS_FILE, []);
 initFile(ORDERS_FILE, []);
@@ -43,7 +49,7 @@ app.post('/register', (req, res) => {
   const users = readData(USERS_FILE);
 
   if (users.some(u => u.email === email)) {
-    return res.json({ success: false, message: 'El correo ya está registrado.' });
+    return res.json({ success: false, message: 'El correo electrónico ya está registrado.' });
   }
 
   const newUser = {
@@ -67,11 +73,11 @@ app.post('/login', (req, res) => {
   if (user) {
     res.json({ success: true, userId: user.id, role: user.role, name: user.name });
   } else {
-    res.json({ success: false, message: 'Credenciales incorrectas.' });
+    res.json({ success: false, message: 'Las credenciales introducidas son incorrectas.' });
   }
 });
 
-// --- RUTAS DE LIBROS ---
+// --- OPERACIONES DE LIBROS ---
 app.get('/books', (req, res) => {
   res.json(readData(BOOKS_FILE));
 });
@@ -104,19 +110,18 @@ app.delete('/books/:id', (req, res) => {
   res.json({ success: true });
 });
 
-// --- RUTAS DEL CARRITO (Sincronizadas) ---
+// --- CARRITO DE COMPRAS ---
 app.get('/cart/:userId', (req, res) => {
   const userId = parseInt(req.params.userId);
   const cart = readData(CART_FILE);
   const books = readData(BOOKS_FILE);
 
-  // Filtrar los items del usuario y cruzar la información del libro
   const userCart = cart.filter(c => c.user_id === userId).map(cItem => {
     const book = books.find(b => b.id === cItem.book_id);
     return {
       cartItemId: cItem.id,
       id: cItem.book_id,
-      title: book ? book.title : 'Libro no encontrado',
+      title: book ? book.title : 'No disponible',
       author: book ? book.author : '',
       price: book ? book.price : 0,
       image: book ? book.image : '',
@@ -143,7 +148,7 @@ app.post('/cart', (req, res) => {
   res.json({ success: true });
 });
 
-// --- HISTORIAL DE VENTAS ---
+// --- PANEL DE CONTROL DE ADMINISTRADOR ---
 app.get('/admin/sales', (req, res) => {
   res.json(readData(ORDERS_FILE));
 });
@@ -154,5 +159,5 @@ app.delete('/admin/sales', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor estable corriendo en puerto ${PORT}`);
+  console.log(`Servidor de alto rendimiento corriendo en puerto ${PORT}`);
 });
