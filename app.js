@@ -136,13 +136,28 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// FUNCIÓN PARA ALTERNAR VISIBILIDAD DE CONTRASEÑAS (OJO)
+function togglePasswordVisibility(inputId, buttonElement) {
+  const input = document.getElementById(inputId);
+  const icon = buttonElement.querySelector('i');
+  
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.remove('fa-eye');
+    icon.classList.add('fa-eye-slash');
+  } else {
+    input.type = 'password';
+    icon.classList.remove('fa-eye-slash');
+    icon.classList.add('fa-eye');
+  }
+}
+
 function abrirModalCarritoManual() {
   if (typeof toggleCart === "function") { toggleCart(); } 
   else if (typeof renderCart === "function") { renderCart(); } 
   else { alert("Abriendo tu carrito de compras..."); }
 }
 
-// CONTROL DE SESIÓN SIN ENMASCARAMIENTOS DE CSS EXTERNO
 async function checkSession() {
   const userId = localStorage.getItem('userId');
   const userRole = localStorage.getItem('userRole');
@@ -152,7 +167,6 @@ async function checkSession() {
   const cartButton = document.getElementById('cartBtn');
 
   if (userId) {
-    // Forzamos visibilidad explícita usando la propiedad flex
     headerControls.style.display = 'flex';
     document.getElementById('auth-section').classList.add('hidden');
     document.getElementById('app-content').classList.remove('hidden');
@@ -173,7 +187,6 @@ async function checkSession() {
       updateCartCount();
     }
   } else {
-    // Si no hay sesión, se esconde la barra por completo de raíz
     headerControls.style.display = 'none';
     if(cartButton) cartButton.style.display = 'none';
     
@@ -209,7 +222,7 @@ async function loadCatalog() {
   }
 }
 
-// MANEJO DE MENSAJES SEGÚN EL ESTADO DEL INPUT DE BÚSQUEDA
+// CONTROL DINÁMICO EXCLUSIVO DE MENSAJES DE ESTADO VACÍO O NO ENCONTRADO
 function renderBooks(booksList) {
   const container = document.getElementById('booksContainer');
   const noBooksFoundMessage = document.getElementById('noBooksFoundMessage');
@@ -247,17 +260,17 @@ function renderBooks(booksList) {
     container.appendChild(card);
   });
 
-  // Lógica de visualización de mensajes solicitada
+  // Lógica de visualización exacta solicitada
   if (allBooksLocal.length === 0) {
-    // Estado 1: La base de datos no tiene libros cargados en absoluto
+    // Caso A: No hay ningún libro en la base de datos (tienda vacía)
     if(emptyStoreMessage) emptyStoreMessage.style.display = 'block';
     if(noBooksFoundMessage) noBooksFoundMessage.style.display = 'none';
   } else if (visibleBooksCount === 0 && searchInput !== '') {
-    // Estado 2: Hay libros publicados, pero la búsqueda actual no coincide con ninguno
+    // Caso B: Hay libros en la tienda, pero la consulta ingresada no trajo ningún resultado
     if(emptyStoreMessage) emptyStoreMessage.style.display = 'none';
     if(noBooksFoundMessage) noBooksFoundMessage.style.display = 'block';
   } else {
-    // Se muestran los libros correctamente, ocultamos advertencias
+    // Caso C: Todo en orden, se listan los resultados
     if(emptyStoreMessage) emptyStoreMessage.style.display = 'none';
     if(noBooksFoundMessage) noBooksFoundMessage.style.display = 'none';
   }
