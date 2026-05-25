@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selectedBookForModal) {
       await addToCart(selectedBookForModal.id);
       document.getElementById('purchaseModal').style.display = 'none';
-      abrirVistaCarrito(); // Cambia directo a la nueva vista de carrito al añadir
+      abrirVistaCarrito();
     }
   });
 
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       categoryButtons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      regresarAlCatalogo(); // Si cambia de categoría, vuelve al catálogo de inmediato
+      regresarAlCatalogo();
       filterBooks(document.getElementById('bookSearchInput').value.toLowerCase().trim());
     });
   });
@@ -151,8 +151,6 @@ function togglePasswordVisibility(inputId, buttonElement) {
     icon.classList.add('fa-eye');
   }
 }
-
-// --- INTERCAMBIO DE VISTAS Y LOGICA DEL CARRITO INTEGRADO ---
 
 function abrirVistaCarrito() {
   document.getElementById('customer-view').classList.add('hidden');
@@ -270,8 +268,6 @@ async function procesarCompraFinal() {
     alert("Inconveniente al conectar con la base de datos de cobro.");
   }
 }
-
-// --- FIN NUEVA LOGICA DE SECCIÓN ---
 
 async function checkSession() {
   const userId = localStorage.getItem('userId');
