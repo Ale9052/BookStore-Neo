@@ -1,17 +1,14 @@
 {
-  "name": "bookstore-backend",
+  "name": "tu-tienda",
   "version": "1.0.0",
-  "description": "Servidor para la librería BookStore Neo",
   "main": "server.js",
-  "engines": {
-    "node": "20.x"
-  },
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "sqlite3-offline": "^4.3.0"
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "mongoose": "^8.0.0"
   }
 }
