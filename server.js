@@ -1,8 +1,8 @@
 const express = require('express');
-const Database = require('better-sqlite3'); // Librería ultra estable para Render
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const path = require('path'); 
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,141 +11,148 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(__dirname));
 
+// Directorio temporal de Render para persistencia
+const DATA_DIR = '/tmp';
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const BOOKS_FILE = path.join(DATA_DIR, 'books.json');
+const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
+const CART_FILE = path.join(DATA_DIR, 'cart.json');
+
+const initFile = (filePath, initialData) => {
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, JSON.stringify(initialData, null, 2), 'utf8');
+  }
+};
+
+// Inicialización de archivos limpia
+initFile(USERS_FILE, [{ id: 1, name: 'Admin', email: 'admin@gmail.com', password: 'admin123', role: 'admin' }]);
+initFile(BOOKS_FILE, []);
+initFile(ORDERS_FILE, []);
+initFile(CART_FILE, []);
+
+const readData = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'));
+const writeData = (filePath, data) => fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Ruta de la base de datos en el directorio temporal de Render
-const dbPath = path.join('/tmp', 'libreria.db');
-const db = new Database(dbPath);
-
-// Creación de tablas de forma síncrona y segura
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    email TEXT UNIQUE,
-    password TEXT,
-    role TEXT DEFAULT 'user'
-  );
-
-  CREATE TABLE IF NOT EXISTS books (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT,
-    author TEXT,
-    category TEXT,
-    price REAL,
-    image TEXT,
-    full_link TEXT,
-    badge TEXT
-  );
-
-  CREATE TABLE IF NOT EXISTS cart (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    book_id INTEGER,
-    quantity INTEGER DEFAULT 1,
-    FOREIGN KEY(user_id) REFERENCES users(id),
-    FOREIGN KEY(book_id) REFERENCES books(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    user_email TEXT,
-    total REAL,
-    date TEXT,
-    status TEXT DEFAULT 'Pagado'
-  );
-`);
-
-// Crear administrador por defecto si no existe
-const adminEmail = 'admin@gmail.com';
-const checkAdmin = db.prepare('SELECT * FROM users WHERE email = ?').get(adminEmail);
-if (!checkAdmin) {
-  db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run('Admin', adminEmail, 'admin123', 'admin');
-}
-
 // --- AUTENTICACIÓN ---
 app.post('/register', (req, res) => {
   const { name, email, password } = req.body;
-  try {
-    const insert = db.prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)');
-    const result = insert.run(name, email, password);
-    res.json({ success: true, userId: result.lastInsertRowid, role: 'user', name: name });
-  } catch (err) {
-    res.json({ success: false, message: 'El correo ya está registrado o hubo un error.' });
+  const users = readData(USERS_FILE);
+
+  if (users.some(u => u.email === email)) {
+    return res.json({ success: false, message: 'El correo ya está registrado.' });
   }
+
+  const newUser = {
+    id: users.length > 0 ? users[users.length - 1].id + 1 : 1,
+    name,
+    email,
+    password,
+    role: 'user'
+  };
+
+  users.push(newUser);
+  writeData(USERS_FILE, users);
+  res.json({ success: true, userId: newUser.id, role: newUser.role, name: newUser.name });
 });
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  
-  if (email === 'admin@gmail.com' && password === 'admin123') {
-    return res.json({ success: true, userId: 1, role: 'admin', name: 'Admin' });
-  }
+  const users = readData(USERS_FILE);
 
-  try {
-    const user = db.prepare('SELECT * FROM users WHERE email = ? AND password = ?').get(email, password);
-    if (user) {
-      res.json({ success: true, userId: user.id, role: user.role, name: user.name || user.email });
-    } else {
-      res.json({ success: false, message: 'Credenciales incorrectas.' });
-    }
-  } catch (err) {
-    res.json({ success: false, message: 'Error en el servidor.' });
+  const user = users.find(u => u.email === email && u.password === password);
+  if (user) {
+    res.json({ success: true, userId: user.id, role: user.role, name: user.name });
+  } else {
+    res.json({ success: false, message: 'Credenciales incorrectas.' });
   }
 });
 
 // --- RUTAS DE LIBROS ---
 app.get('/books', (req, res) => {
-  try {
-    const books = db.prepare('SELECT * FROM books').all();
-    res.json(books);
-  } catch (err) {
-    res.json([]);
-  }
+  res.json(readData(BOOKS_FILE));
 });
 
 app.post('/books', (req, res) => {
   const { title, author, category, price, image, full_link, badge } = req.body;
-  try {
-    const insert = db.prepare('INSERT INTO books (title, author, category, price, image, full_link, badge) VALUES (?, ?, ?, ?, ?, ?, ?)');
-    const result = insert.run(title, author, category, price, image, full_link, badge || '');
-    res.json({ success: true, bookId: result.lastInsertRowid });
-  } catch (err) {
-    res.json({ success: false });
-  }
+  const books = readData(BOOKS_FILE);
+
+  const newBook = {
+    id: books.length > 0 ? books[books.length - 1].id + 1 : 1,
+    title,
+    author,
+    category,
+    price: parseFloat(price) || 0,
+    image,
+    full_link,
+    badge: badge || ''
+  };
+
+  books.push(newBook);
+  writeData(BOOKS_FILE, books);
+  res.json({ success: true, bookId: newBook.id });
 });
 
 app.delete('/books/:id', (req, res) => {
-  try {
-    db.prepare('DELETE FROM books WHERE id = ?').run(req.params.id);
-    res.json({ success: true });
-  } catch (err) {
-    res.json({ success: false });
-  }
+  const bookId = parseInt(req.params.id);
+  let books = readData(BOOKS_FILE);
+  books = books.filter(b => b.id !== bookId);
+  writeData(BOOKS_FILE, books);
+  res.json({ success: true });
+});
+
+// --- RUTAS DEL CARRITO (Sincronizadas) ---
+app.get('/cart/:userId', (req, res) => {
+  const userId = parseInt(req.params.userId);
+  const cart = readData(CART_FILE);
+  const books = readData(BOOKS_FILE);
+
+  // Filtrar los items del usuario y cruzar la información del libro
+  const userCart = cart.filter(c => c.user_id === userId).map(cItem => {
+    const book = books.find(b => b.id === cItem.book_id);
+    return {
+      cartItemId: cItem.id,
+      id: cItem.book_id,
+      title: book ? book.title : 'Libro no encontrado',
+      author: book ? book.author : '',
+      price: book ? book.price : 0,
+      image: book ? book.image : '',
+      quantity: cItem.quantity
+    };
+  });
+
+  res.json(userCart);
+});
+
+app.post('/cart', (req, res) => {
+  const { user_id, book_id } = req.body;
+  const cart = readData(CART_FILE);
+
+  const newCartItem = {
+    id: cart.length > 0 ? cart[cart.length - 1].id + 1 : 1,
+    user_id: parseInt(user_id),
+    book_id: parseInt(book_id),
+    quantity: 1
+  };
+
+  cart.push(newCartItem);
+  writeData(CART_FILE, cart);
+  res.json({ success: true });
 });
 
 // --- HISTORIAL DE VENTAS ---
 app.get('/admin/sales', (req, res) => {
-  try {
-    const sales = db.prepare('SELECT * FROM orders ORDER BY id DESC').all();
-    res.json(sales);
-  } catch (err) {
-    res.json([]);
-  }
+  res.json(readData(ORDERS_FILE));
 });
 
 app.delete('/admin/sales', (req, res) => {
-  try {
-    db.prepare('DELETE FROM orders').run();
-    res.json({ success: true });
-  } catch (err) {
-    res.json({ success: false });
-  }
+  writeData(ORDERS_FILE, []);
+  res.json({ success: true });
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
+  console.log(`Servidor estable corriendo en puerto ${PORT}`);
 });
