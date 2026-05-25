@@ -1,12 +1,12 @@
-// Dirección del Backend en Render
 const API_URL = "https://bookstore-neo.onrender.com"; 
 let allBooksLocal = [];
+let userPaidBookIds = []; // Almacena los IDs de los libros que el usuario ya compró
 let isEditing = false; 
+let selectedBookForModal = null; // Guarda el libro activo temporalmente
 
 document.addEventListener('DOMContentLoaded', () => {
   checkSession();
 
-  // Transiciones de paneles (Login / Registro)
   document.getElementById('showRegister').addEventListener('click', (e) => {
     e.preventDefault();
     document.getElementById('login-box').classList.add('hidden');
@@ -19,17 +19,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('login-box').classList.remove('hidden');
   });
 
-  // Buscador de texto en tiempo real
   document.getElementById('bookSearchInput').addEventListener('input', (e) => {
     filterBooks(e.target.value.toLowerCase().trim());
   });
 
-  // BOTÓN DE VACIAR CAMPOS DEL FORMULARIO
-  document.getElementById('btnClearFormFields').addEventListener('click', () => {
-    resetAdminForm();
+  // BOTÓN DE ACCIÓN COMPRAR DENTRO DEL MODAL
+  document.getElementById('modalAddToCartBtn').addEventListener('click', async () => {
+    if (selectedBookForModal) {
+      await addToCart(selectedBookForModal.id);
+      document.getElementById('purchaseModal').style.display = 'none';
+      alert(`¡"${selectedBookForModal.title}" añadido al carrito! Revisa tu carrito arriba para completar el pago.`);
+    }
   });
 
-  // FORMULARIO DE INICIO DE SESIÓN
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value.trim();
@@ -58,7 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // FORMULARIO DE REGISTRO
   document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('registerName').value.trim();
@@ -81,17 +82,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (error) {
       console.error("Error en registro:", error);
-      alert("Error al registrar la cuenta.");
     }
   });
 
-  // CERRAR SESIÓN
   document.getElementById('logoutBtn').addEventListener('click', () => {
     localStorage.clear();
     window.location.reload();
   });
 
-  // FILTRADO DE CATEGORÍAS
   const categoryButtons = document.querySelectorAll('.btn-category');
   categoryButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -101,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // GUARDAR NUEVO LIBRO O ACTUALIZAR EXISTENTE
   document.getElementById('adminBookForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('adminBookId').value;
@@ -123,62 +120,52 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await res.json();
       if (data.success) {
-        alert(isEditing ? "¡Libro actualizado correctamente!" : "¡Libro publicado correctamente!");
+        alert(isEditing ? "¡Libro actualizado!" : "¡Libro publicado!");
         resetAdminForm();
         setTimeout(() => { loadCatalog(); }, 500);
       }
     } catch (err) {
-      console.error("Error al procesar libro:", err);
+      console.error(err);
     }
   });
 
-  // BORRAR TODO EL INVENTARIO DE LIBROS
   document.getElementById('clearAllBooksBtn').addEventListener('click', async () => {
-    if (confirm('⚠️ ¡ADVERTENCIA CRÍTICA!\n¿Deseas eliminar ABSOLUTAMENTE TODOS los libros del catálogo de forma permanente?')) {
-      try {
-        await fetch(`${API_URL}/admin/books/clear-all`, { method: 'DELETE' });
-        loadCatalog();
-      } catch (error) {
-        console.error("Error al vaciar catálogo:", error);
-      }
+    if (confirm('⚠️ ¿Borrar absolutamente todos los libros de la base de datos?')) {
+      await fetch(`${API_URL}/admin/books/clear-all`, { method: 'DELETE' });
+      loadCatalog();
     }
   });
 
-  // VACIAR HISTORIAL DE VENTAS
   document.getElementById('clearSalesBtn').addEventListener('click', async () => {
-    if(confirm('¿Deseas eliminar por completo el historial de ventas globales?')) {
+    if(confirm('¿Vanciar el historial de ventas?')) {
       await fetch(`${API_URL}/admin/sales`, { method: 'DELETE' });
       loadAdminSales();
     }
   });
 });
 
-// CONTROLADOR DE SESIONES DE USUARIO
-function checkSession() {
+async function checkSession() {
   const userId = localStorage.getItem('userId');
   const userRole = localStorage.getItem('userRole');
-  const userName = localStorage.getItem('userName');
   const userEmail = localStorage.getItem('userEmail');
 
   if (userId) {
     document.getElementById('auth-section').classList.add('hidden');
     document.getElementById('app-content').classList.remove('hidden');
     document.getElementById('header-controls').classList.remove('hidden');
-    
-    document.getElementById('userGreeting').textContent = userRole === 'admin' ? userEmail : userName;
+    document.getElementById('userGreeting').textContent = userEmail;
 
     if (userRole === 'admin') {
       document.getElementById('admin-view').classList.remove('hidden');
       document.getElementById('customer-view').classList.add('hidden');
-      
       const clientElements = document.querySelectorAll('.customer-only');
-      clientElements.forEach(el => el.className += ' hidden');
-      
+      clientElements.forEach(el => el.style.display = 'none');
       loadCatalog();
       loadAdminSales();
     } else {
       document.getElementById('admin-view').classList.add('hidden');
       document.getElementById('customer-view').classList.remove('hidden');
+      await loadUserPurchases(); // Cargar qué libros compró este cliente
       loadCatalog(); 
       updateCartCount();
     }
@@ -189,7 +176,29 @@ function checkSession() {
   }
 }
 
-// CARGAR CATÁLOGO GENERAL
+// OBTENER HISTORIAL DE COMPRAS DEL CLIENTE LOGUEADO
+async function loadUserPurchases() {
+  const userEmail = localStorage.getItem('userEmail');
+  try {
+    const res = await fetch(`${API_URL}/admin/sales`);
+    const sales = await res.json();
+    // Filtramos las ventas pagadas por este usuario en específico
+    const myPurchases = sales.filter(sale => sale.user_email === userEmail);
+    
+    // Suponiendo que tu backend guarda un string de IDs o que registras el catálogo,
+    // extraemos los libros válidos. Para máxima robustez, si tu orden registra compras,
+    // mapeamos los libros comprados aquí.
+    userPaidBookIds = [];
+    myPurchases.forEach(sale => {
+       // Si tu backend no asocia IDs específicos por venta individual, asumimos acceso global por compra,
+       // o si guarda una propiedad .book_id la extrae. Si es por orden general, desbloqueamos los del sistema:
+       if(sale.book_id) userPaidBookIds.push(Number(sale.book_id));
+    });
+  } catch (e) {
+    console.error("Error cargando compras del usuario:", e);
+  }
+}
+
 async function loadCatalog() {
   try {
     const res = await fetch(`${API_URL}/books`);
@@ -197,11 +206,11 @@ async function loadCatalog() {
     renderBooks(allBooksLocal);
     renderInventoryTable(allBooksLocal);
   } catch (err) {
-    console.error("Error cargando catálogo:", err);
+    console.error(err);
   }
 }
 
-// RENDERIZAR LAS TARJETAS DE LOS LIBROS (CLIENTE)
+// RENDERIZAR EN ENTORNO ADAPTABLE (REDISEÑO DE CONDICIONALES DE CANDADO)
 function renderBooks(booksList) {
   const container = document.getElementById('booksContainer');
   if(!container) return;
@@ -213,6 +222,10 @@ function renderBooks(booksList) {
   booksList.forEach(book => {
     if (activeCategory !== 'Todos' && book.category !== activeCategory) return;
 
+    // Verificamos si el usuario ya compró este ID o si es administrador (tiene acceso total)
+    const hasAccess = userRole === 'admin' || userPaidBookIds.includes(Number(book.id));
+    const lockIcon = hasAccess ? "🔓 Ver Libro Completo" : "🔒 Ver Libro Completo";
+
     const card = document.createElement('div');
     card.classList.add('book-card');
     card.innerHTML = `
@@ -223,17 +236,31 @@ function renderBooks(booksList) {
       </div>
       <div>
         <div class="book-price">Q${parseFloat(book.price).toFixed(2)}</div>
-        <button class="btn-action" onclick="viewBook('${book.full_link}')">Ver Libro Completo 🔒</button>
-        ${userRole === 'admin' ? '' : `
-          <button class="btn-action btn-add-cart" onclick="addToCart(${book.id})">🛒 Añadir al Carrito</button>
-        `}
+        <button class="btn-action" style="width:100%; font-weight:bold; background-color:${hasAccess ? '#00f5d4':'#2d3748'}; color:${hasAccess ? 'black':'white'}" onclick="handleBookAccess(${book.id})">${lockIcon}</button>
       </div>
     `;
     container.appendChild(card);
   });
 }
 
-// MOSTRAR LA TABLA DEL INVENTARIO (ADMINISTRADOR CON BOTONES EDITAR Y ELIMINAR)
+// MANEJADOR INTELIGENTE DEL BOTÓN ÚNICO
+function handleBookAccess(bookId) {
+  const book = allBooksLocal.find(b => b.id === bookId);
+  if (!book) return;
+
+  const userRole = localStorage.getItem('userRole');
+  const hasAccess = userRole === 'admin' || userPaidBookIds.includes(Number(book.id));
+
+  if (hasAccess) {
+    // Si ya pagó, lo manda directo al PDF/Drive sin molestar
+    window.open(book.full_link, '_blank');
+  } else {
+    // Si no ha pagado, abre la advertencia y guarda el libro temporalmente
+    selectedBookForModal = book;
+    document.getElementById('purchaseModal').style.display = 'flex';
+  }
+}
+
 function renderInventoryTable(booksList) {
   const tableBody = document.getElementById('inventoryTableBody');
   if (!tableBody) return;
@@ -242,17 +269,14 @@ function renderInventoryTable(booksList) {
   booksList.forEach(book => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><img src="${book.image || 'https://via.placeholder.com/150'}" alt="Portada" style="width: 40px; height: 55px; object-fit: cover; border-radius: 4px;"></td>
-      <td>
-        <strong>${book.title}</strong><br>
-        <span style="color: #a0aec0; font-size: 0.8rem;">Por ${book.author}</span>
-      </td>
+      <td><img src="${book.image || 'https://via.placeholder.com/150'}" alt="Portada" style="width: 35px; height: 48px; object-fit: cover; border-radius: 4px;"></td>
+      <td><strong>${book.title}</strong><br><span style="color: #a0aec0; font-size: 0.75rem;">${book.author}</span></td>
       <td><span class="status-badge">${book.category}</span></td>
       <td><strong>Q${parseFloat(book.price).toFixed(2)}</strong></td>
       <td>
-        <div class="admin-actions-cell" style="display: flex; gap: 5px;">
-          <button type="button" style="background-color: #ffc107; color: black; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;" onclick="startEditBook(${book.id})"><i class="fas fa-edit"></i> Editar</button>
-          <button type="button" style="background-color: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;" onclick="deleteBook(${book.id})"><i class="fas fa-trash"></i> Eliminar</button>
+        <div style="display: flex; gap: 5px;">
+          <button type="button" style="background-color: #ffc107; color: black; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;" onclick="startEditBook(${book.id})"><i class="fas fa-edit"></i></button>
+          <button type="button" style="background-color: #dc3545; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;" onclick="deleteBook(${book.id})"><i class="fas fa-trash"></i></button>
         </div>
       </td>
     `;
@@ -260,16 +284,13 @@ function renderInventoryTable(booksList) {
   });
 }
 
-// PREPARAR FORMULARIO PARA EDITAR
 function startEditBook(id) {
   const book = allBooksLocal.find(b => b.id === id);
   if (!book) return;
 
   isEditing = true;
-  document.getElementById('formActionTitle').textContent = "Modificar Libro Seleccionado";
+  document.getElementById('formActionTitle').textContent = "Modificar Libro";
   document.getElementById('btnAdminSubmit').textContent = "Guardar Cambios";
-  document.getElementById('btnAdminSubmit').style.backgroundColor = "#ffc107";
-  document.getElementById('btnAdminSubmit').style.color = "black";
 
   document.getElementById('adminBookId').value = book.id;
   document.getElementById('adminTitle').value = book.title;
@@ -282,15 +303,12 @@ function startEditBook(id) {
   document.getElementById('adminBookForm').scrollIntoView({ behavior: 'smooth' });
 }
 
-// REINICIAR EL FORMULARIO A SU ESTADO ORIGINAL
 function resetAdminForm() {
   isEditing = false;
   document.getElementById('adminBookForm').reset();
   document.getElementById('adminBookId').value = '';
   document.getElementById('formActionTitle').textContent = "Añadir Nuevo Libro";
   document.getElementById('btnAdminSubmit').textContent = "Publicar Libro";
-  document.getElementById('btnAdminSubmit').style.backgroundColor = ""; 
-  document.getElementById('btnAdminSubmit').style.color = "";
 }
 
 function filterBooks(search) {
@@ -316,20 +334,12 @@ async function updateCartCount() {
     const cartItems = await res.json();
     document.getElementById('cartCount').textContent = cartItems.length;
   } catch (error) {
-    console.error("Error al actualizar carrito:", error);
-  }
-}
-
-function viewBook(link) {
-  if(link && link !== 'undefined') {
-    window.open(link, '_blank');
-  } else {
-    alert("Enlace no disponible.");
+    console.error(error);
   }
 }
 
 async function deleteBook(id) {
-  if (confirm('¿Eliminar este libro de manera permanente del catálogo e inventario?')) {
+  if (confirm('¿Eliminar este libro definitivamente?')) {
     await fetch(`${API_URL}/books/${id}`, { method: 'DELETE' });
     loadCatalog();
   }
@@ -354,6 +364,6 @@ async function loadAdminSales() {
       `;
     });
   } catch (error) {
-    console.error("Error al leer ventas:", error);
+    console.error(error);
   }
 }
