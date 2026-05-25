@@ -1,163 +1,90 @@
+require('dotenv').config();
 const express = require('express');
-const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuración de CORS Explícita para dar acceso completo a GitHub Pages
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type']
-}));
+// Conexión a MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('✅ Conectado a MongoDB Atlas'))
+  .catch(err => console.error('❌ Error conectando a MongoDB:', err));
 
-app.use(bodyParser.json());
+// Esquemas (Modelos)
+const User = mongoose.model('User', new mongoose.Schema({ name: String, email: String, password: String, role: String }));
+const Book = mongoose.model('Book', new mongoose.Schema({ title: String, author: String, category: String, price: Number, image: String, full_link: String, badge: String }));
+const CartItem = mongoose.model('CartItem', new mongoose.Schema({ user_id: Number, book_id: Number, quantity: Number }));
+const Order = mongoose.model('Order', new mongoose.Schema({ user_email: String, book_id: Number, title: String, price: Number }));
+
+app.use(cors());
+app.use(express.json());
 app.use(express.static(__dirname));
 
-// Rutas de almacenamiento persistente en la instancia de Render
-const DATA_DIR = '/tmp';
-const USERS_FILE = path.join(DATA_DIR, 'users.json');
-const BOOKS_FILE = path.join(DATA_DIR, 'books.json');
-const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
-const CART_FILE = path.join(DATA_DIR, 'cart.json');
-
-const initFile = (filePath, initialData) => {
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, JSON.stringify(initialData, null, 2), 'utf8');
-  }
-};
-
-// Crear archivos base si no existen con el usuario Administrador inicializado
-initFile(USERS_FILE, [{ id: 1, name: 'Admin', email: 'admin@gmail.com', password: 'admin123', role: 'admin' }]);
-initFile(BOOKS_FILE, []);
-initFile(ORDERS_FILE, []);
-initFile(CART_FILE, []);
-
-const readData = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'));
-const writeData = (filePath, data) => fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
 // --- AUTENTICACIÓN ---
-app.post('/register', (req, res) => {
+app.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
-  const users = readData(USERS_FILE);
+  const existingUser = await User.findOne({ email });
+  if (existingUser) return res.json({ success: false, message: 'El correo ya está registrado.' });
 
-  if (users.some(u => u.email === email)) {
-    return res.json({ success: false, message: 'El correo electrónico ya está registrado.' });
-  }
-
-  const newUser = {
-    id: users.length > 0 ? users[users.length - 1].id + 1 : 1,
-    name,
-    email,
-    password,
-    role: 'user'
-  };
-
-  users.push(newUser);
-  writeData(USERS_FILE, users);
-  res.json({ success: true, userId: newUser.id, role: newUser.role, name: newUser.name });
+  const newUser = await User.create({ name, email, password, role: 'user' });
+  res.json({ success: true, userId: newUser._id, role: newUser.role, name: newUser.name });
 });
 
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  const users = readData(USERS_FILE);
-
-  const user = users.find(u => u.email === email && u.password === password);
+  const user = await User.findOne({ email, password });
   if (user) {
-    res.json({ success: true, userId: user.id, role: user.role, name: user.name });
+    res.json({ success: true, userId: user._id, role: user.role, name: user.name });
   } else {
-    res.json({ success: false, message: 'Las credenciales introducidas son incorrectas.' });
+    res.json({ success: false, message: 'Credenciales incorrectas.' });
   }
 });
 
 // --- OPERACIONES DE LIBROS ---
-app.get('/books', (req, res) => {
-  res.json(readData(BOOKS_FILE));
+app.get('/books', async (req, res) => {
+  const books = await Book.find();
+  res.json(books);
 });
 
-app.post('/books', (req, res) => {
-  const { title, author, category, price, image, full_link, badge } = req.body;
-  const books = readData(BOOKS_FILE);
-
-  const newBook = {
-    id: books.length > 0 ? books[books.length - 1].id + 1 : 1,
-    title,
-    author,
-    category,
-    price: parseFloat(price) || 0,
-    image,
-    full_link,
-    badge: badge || ''
-  };
-
-  books.push(newBook);
-  writeData(BOOKS_FILE, books);
-  res.json({ success: true, bookId: newBook.id });
+app.post('/books', async (req, res) => {
+  const newBook = await Book.create(req.body);
+  res.json({ success: true, bookId: newBook._id });
 });
 
-app.delete('/books/:id', (req, res) => {
-  const bookId = parseInt(req.params.id);
-  let books = readData(BOOKS_FILE);
-  books = books.filter(b => b.id !== bookId);
-  writeData(BOOKS_FILE, books);
+app.delete('/books/:id', async (req, res) => {
+  await Book.findByIdAndDelete(req.params.id);
   res.json({ success: true });
 });
 
-// --- CARRITO DE COMPRAS ---
-app.get('/cart/:userId', (req, res) => {
-  const userId = parseInt(req.params.userId);
-  const cart = readData(CART_FILE);
-  const books = readData(BOOKS_FILE);
-
-  const userCart = cart.filter(c => c.user_id === userId).map(cItem => {
-    const book = books.find(b => b.id === cItem.book_id);
-    return {
-      cartItemId: cItem.id,
-      id: cItem.book_id,
-      title: book ? book.title : 'No disponible',
-      author: book ? book.author : '',
-      price: book ? book.price : 0,
-      image: book ? book.image : '',
-      quantity: cItem.quantity
-    };
-  });
-
-  res.json(userCart);
+// --- CARRITO ---
+app.get('/cart/:userId', async (req, res) => {
+  const cartItems = await CartItem.find({ user_id: req.params.userId });
+  res.json(cartItems);
 });
 
-app.post('/cart', (req, res) => {
-  const { user_id, book_id } = req.body;
-  const cart = readData(CART_FILE);
-
-  const newCartItem = {
-    id: cart.length > 0 ? cart[cart.length - 1].id + 1 : 1,
-    user_id: parseInt(user_id),
-    book_id: parseInt(book_id),
-    quantity: 1
-  };
-
-  cart.push(newCartItem);
-  writeData(CART_FILE, cart);
+app.post('/cart', async (req, res) => {
+  const newItem = await CartItem.create(req.body);
   res.json({ success: true });
 });
 
-// --- PANEL DE CONTROL DE ADMINISTRADOR ---
-app.get('/admin/sales', (req, res) => {
-  res.json(readData(ORDERS_FILE));
+app.delete('/cart/:itemId', async (req, res) => {
+  await CartItem.findByIdAndDelete(req.params.itemId);
+  res.json({ success: true });
 });
 
-app.delete('/admin/sales', (req, res) => {
-  writeData(ORDERS_FILE, []);
+// --- ADMINISTRADOR ---
+app.post('/admin/sales', async (req, res) => {
+  await Order.create(req.body);
   res.json({ success: true });
+});
+
+app.get('/admin/sales', async (req, res) => {
+  const sales = await Order.find();
+  res.json(sales);
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor de alto rendimiento corriendo en puerto ${PORT}`);
+  console.log(`Servidor corriendo en puerto ${PORT}`);
 });
