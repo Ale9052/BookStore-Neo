@@ -115,7 +115,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.success) {
         alert("¡Libro publicado correctamente en el catálogo!");
         document.getElementById('adminBookForm').reset();
-        loadCatalog();
+        
+        // El retraso de 500ms le da el tiempo exacto al servidor para guardar 
+        // el archivo antes de que lo volvamos a solicitar
+        setTimeout(() => {
+          loadCatalog();
+        }, 500);
       }
     } catch (err) {
       console.error("Error al publicar libro:", err);
@@ -152,13 +157,15 @@ function checkSession() {
       const clientElements = document.querySelectorAll('.customer-only');
       clientElements.forEach(el => el.classList.add('hidden'));
       
+      // Al ser Administrador cargamos inmediatamente el catálogo para armar el inventario
+      loadCatalog();
       loadAdminSales();
     } else {
       document.getElementById('admin-view').classList.add('hidden');
       document.getElementById('customer-view').classList.remove('hidden');
+      loadCatalog(); 
       updateCartCount();
     }
-    loadCatalog();
   } else {
     document.getElementById('auth-section').classList.remove('hidden');
     document.getElementById('app-content').classList.add('hidden');
@@ -172,7 +179,7 @@ async function loadCatalog() {
     const res = await fetch(`${API_URL}/books`);
     allBooksLocal = await res.json();
     renderBooks(allBooksLocal);
-    renderInventoryTable(allBooksLocal); // Renderiza también el inventario del administrador
+    renderInventoryTable(allBooksLocal); // Actualiza la tabla de administración al mismo tiempo
   } catch (err) {
     console.error("Error cargando catálogo:", err);
   }
