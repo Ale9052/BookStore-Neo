@@ -6,6 +6,34 @@
   <title>BookStore Neo</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    /* Estilo rápido para posicionar el ojo de la contraseña de manera limpia */
+    .password-wrapper {
+      position: relative !important;
+      display: flex !important;
+      align-items: center !important;
+    }
+    .password-wrapper input {
+      width: 100% !important;
+      padding-right: 40px !important;
+    }
+    .toggle-password-btn {
+      position: absolute !important;
+      right: 12px !important;
+      background: none !important;
+      border: none !important;
+      color: #a0aec0 !important;
+      cursor: pointer !important;
+      font-size: 0.95rem !important;
+      padding: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    .toggle-password-btn:hover {
+      color: #00f5d4 !important;
+    }
+  </style>
 </head>
 <body>
 
@@ -46,7 +74,12 @@
           </div>
           <div class="form-group">
             <label>CONTRASEÑA</label>
-            <input type="password" id="loginPassword" placeholder="••••••••" required>
+            <div class="password-wrapper">
+              <input type="password" id="loginPassword" placeholder="••••••••" required>
+              <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('loginPassword', this)">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
           </div>
           <button type="submit" class="btn-submit">Iniciar Sesión</button>
         </form>
@@ -67,7 +100,12 @@
           </div>
           <div class="form-group">
             <label>CONTRASEÑA DE LA PLATAFORMA</label>
-            <input type="password" id="registerPassword" placeholder="Mínimo 6 caracteres" minlength="6" required>
+            <div class="password-wrapper">
+              <input type="password" id="registerPassword" placeholder="Mínimo 6 caracteres" minlength="6" required>
+              <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('registerPassword', this)">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
           </div>
           <button type="submit" class="btn-submit">Registrarse</button>
         </form>
@@ -97,13 +135,13 @@
         <div id="noBooksFoundMessage" style="display: none; text-align: center; padding: 40px 20px; color: #a0aec0; background-color: #1a202c; border: 1px dashed #2d3748; border-radius: 8px; margin-top: 2rem;">
           <i class="fas fa-search-minus" style="font-size: 2.5rem; color: #ffc107; margin-bottom: 10px;"></i>
           <h4 style="color: white; margin-bottom: 5px; font-size: 1.1rem;">Libro no encontrado</h4>
-          <p style="font-size: 0.95rem;">Lo sentimos, el título o autor que estás buscando no está disponible en nuestra tienda.</p>
+          <p style="font-size: 0.95rem;">Lo sentimos, el título o autor que estás buscando no está disponible en nuestra tienda de momento.</p>
         </div>
 
         <div id="emptyStoreMessage" style="display: none; text-align: center; padding: 50px 20px; color: #a0aec0; background-color: #1a202c; border: 1px solid #2d3748; border-radius: 8px; margin-top: 2rem;">
           <i class="fas fa-book-open" style="font-size: 3rem; color: #4a5568; margin-bottom: 12px;"></i>
-          <h4 style="color: white; margin-bottom: 5px; font-size: 1.2rem;">Librería en mantenimiento</h4>
-          <p style="font-size: 0.95rem;">Por el momento no se han publicado libros en la plataforma. ¡Vuelve más tarde!</p>
+          <h4 style="color: white; margin-bottom: 5px; font-size: 1.2rem;">Sin libros disponibles</h4>
+          <p style="font-size: 0.95rem;">De momento no hay libros en la tienda. ¡Vuelve más tarde!</p>
         </div>
       </div>
 
