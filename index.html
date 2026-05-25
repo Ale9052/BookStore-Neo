@@ -13,7 +13,7 @@
     <div class="header-container" style="display: flex !important; flex-wrap: wrap !important; justify-content: space-between !important; align-items: center !important; gap: 10px !important;">
       <div class="logo">BookStore<span class="dot">.</span></div>
       
-      <div id="header-controls" class="header-controls hidden" style="display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 10px !important; flex: 1 !important; justify-content: flex-end !important;">
+      <div id="header-controls" style="display: none !important; flex-wrap: wrap !important; align-items: center !important; gap: 10px !important; flex: 1 !important; justify-content: flex-end !important;">
         
         <div class="search-bar" style="position: relative !important; display: inline-block !important; width: 100% !important; max-width: 400px !important; min-width: 200px !important;">
           <i class="fas fa-search" style="position: absolute !important; left: 15px !important; top: 50% !important; transform: translateY(-50%) !important; color: #a0aec0 !important; pointer-events: none !important; z-index: 999 !important; margin: 0 !important; padding: 0 !important;"></i>
@@ -23,7 +23,7 @@
         <div class="user-menu" style="display: flex !important; align-items: center !important; gap: 8px !important;">
           <span id="userGreeting" class="user-email" style="max-width: 120px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-size: 0.85rem !important;"></span>
           
-          <button id="cartBtn" class="btn-cart customer-only" style="padding: 6px 12px !important; font-size: 0.85rem !important; display: inline-flex !important; align-items: center !important; gap: 5px !important; white-space: nowrap !important; background-color: #00f5d4 !important; color: black !important; border: none !important; border-radius: 4px !important; cursor: pointer; font-weight: bold;">
+          <button id="cartBtn" class="customer-only" onclick="abrirModalCarritoManual()" style="display: none !important; padding: 6px 12px !important; font-size: 0.85rem !important; align-items: center !important; gap: 5px !important; white-space: nowrap !important; background-color: #00f5d4 !important; color: black !important; border: none !important; border-radius: 4px !important; cursor: pointer; font-weight: bold; z-index: 99999 !important;">
             <i class="fas fa-shopping-cart"></i> Mi Carrito <span id="cartCount" class="badge-count" style="background-color: #1a202c; color: #00f5d4; padding: 2px 6px; border-radius: 50%; font-size: 0.75rem; margin-left: 3px;">0</span>
           </button>
           
