@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ email, password })
       });
       const data = await res.json();
-      
       if (data.success) {
         localStorage.setItem('userId', data.userId);
         localStorage.setItem('userEmail', email);
@@ -131,15 +130,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // CORRECCIÓN: Botón Borrar Todo
   document.getElementById('clearAllBooksBtn').addEventListener('click', async () => {
     if (confirm('⚠️ ¿Borrar todos los libros?')) {
       try {
         await fetch(`${API_URL}/admin/books/clear-all`, { method: 'DELETE' });
         loadCatalog();
-      } catch (err) {
-        console.error(err);
-        alert("Error al borrar todo.");
-      }
+      } catch (err) { alert("Error al borrar todo."); }
     }
   });
 });
@@ -218,9 +215,7 @@ async function eliminarDelCarritoCompleto(cartItemId) {
     await fetch(`${API_URL}/cart/${cartItemId}`, { method: 'DELETE' });
     renderizarVistaCarritoCompleta();
     updateCartCount();
-  } catch (err) {
-    console.error(err);
-  }
+  } catch (err) { console.error(err); }
 }
 
 async function procesarCompraFinal() {
@@ -249,11 +244,6 @@ async function procesarCompraFinal() {
           price: bookData.price
         })
       });
-
-      if (!userPaidBookIds.includes(Number(item.book_id))) {
-        userPaidBookIds.push(Number(item.book_id));
-      }
-
       await fetch(`${API_URL}/cart/${item.id}`, { method: 'DELETE' });
     }
 
@@ -261,10 +251,7 @@ async function procesarCompraFinal() {
     regresarAlCatalogo();
     updateCartCount();
     renderBooks(allBooksLocal); 
-  } catch (error) {
-    console.error("Error:", error);
-    alert("Ocurrió un error al procesar el pago.");
-  }
+  } catch (error) { alert("Error al procesar el pago."); }
 }
 
 async function checkSession() {
@@ -414,9 +401,7 @@ async function addToCart(bookId) {
       body: JSON.stringify({ user_id: userId, book_id: bookId })
     });
     updateCartCount();
-  } catch (err) {
-    console.error(err);
-  }
+  } catch (err) { console.error(err); }
 }
 
 async function updateCartCount() {
@@ -425,9 +410,7 @@ async function updateCartCount() {
     const res = await fetch(`${API_URL}/cart/${userId}`);
     const cartItems = await res.json();
     document.getElementById('cartCount').textContent = cartItems.length;
-  } catch (err) {
-    console.error(err);
-  }
+  } catch (err) { console.error(err); }
 }
 
 async function deleteBook(id) {
@@ -435,9 +418,6 @@ async function deleteBook(id) {
     try {
       await fetch(`${API_URL}/books/${id}`, { method: 'DELETE' });
       loadCatalog();
-    } catch (err) {
-      console.error(err);
-      alert("Error al intentar borrar el libro.");
-    }
+    } catch (err) { alert("Error al borrar."); }
   }
 }
