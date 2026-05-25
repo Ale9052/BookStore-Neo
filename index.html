@@ -2,41 +2,86 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BookStore Neo</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <header>
-        <div class="logo" onclick="regresarAlCatalogo()" style="cursor:pointer;">BookStore.</div>
-        <nav id="header-controls">
-            <button id="cartBtn" onclick="abrirVistaCarrito()"><i class="fas fa-shopping-cart"></i> (<span id="cartCount">0</span>)</button>
+
+    <header class="main-header">
+        <div class="logo" onclick="regresarAlCatalogo()" style="cursor:pointer;">BookStore<span>.</span></div>
+        <div id="header-controls" style="display:none;">
+            <input type="text" id="bookSearchInput" placeholder="Buscar título o autor...">
+            <button id="cartBtn" onclick="abrirVistaCarrito()">
+                <i class="fas fa-shopping-cart"></i> Mi Carrito (<span id="cartCount">0</span>)
+            </button>
             <button id="logoutBtn" onclick="localStorage.clear(); location.reload();">Salir</button>
-        </nav>
+        </div>
     </header>
 
     <main>
         <section id="auth-section">
             <div id="login-box">
-                <input type="password" id="loginPassword" placeholder="Contraseña">
-                <button type="button" onclick="togglePasswordVisibility('loginPassword', this)"><i class="fas fa-eye"></i></button>
+                <h2>Bienvenido de nuevo</h2>
+                <p>Ingresa con tu cuenta verídica de Gmail</p>
+                
+                <label>CORREO ELECTRÓNICO</label>
+                <input type="email" id="loginEmail" placeholder="usuario@gmail.com">
+                
+                <label>CONTRASEÑA</label>
+                <div class="password-wrapper" style="position: relative;">
+                    <input type="password" id="loginPassword" placeholder="••••••••">
+                    <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('loginPassword', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                
                 <button onclick="loginUser()">Iniciar Sesión</button>
             </div>
         </section>
 
         <section id="app-content" class="hidden">
+            
             <div id="customer-view">
+                <div class="catalog-header">
+                    <h2>Explora Nuestro Catálogo</h2>
+                    <p>Adquiere los títulos literarios más influyentes del planeta</p>
+                </div>
+                <div id="filter-buttons"></div>
                 <div id="booksContainer"></div>
             </div>
+
+            <div id="admin-view" class="hidden">
+                <form id="adminBookForm">
+                    <input type="text" id="adminTitle" placeholder="Título" required>
+                    <input type="text" id="adminAuthor" placeholder="Autor" required>
+                    <input type="number" id="adminPrice" placeholder="Precio" required>
+                    <button type="submit">Publicar Libro</button>
+                </form>
+                <table id="inventoryTable">
+                    <thead><tr><th>Título</th><th>Acciones</th></tr></thead>
+                    <tbody id="inventoryTableBody"></tbody>
+                </table>
+            </div>
+
             <div id="cart-view" class="hidden">
                 <h2>Tu Carrito de Compras</h2>
+                <p>Revisa tus libros seleccionados antes de procesar tu pago cifrado</p>
                 <div id="cartFullItemsList"></div>
-                <div id="summaryTotal">Total: Q0.00</div>
-                <button onclick="procesarCompraFinal()">Proceder al Pago Seguro</button>
-                <button onclick="regresarAlCatalogo()">Volver</button>
+                <div class="order-summary">
+                    <div id="summaryTotal">Total: Q0.00</div>
+                    <button onclick="procesarCompraFinal()">Proceder al Pago Seguro</button>
+                    <button onclick="regresarAlCatalogo()">Volver al Catálogo</button>
+                </div>
             </div>
         </section>
     </main>
+
+    <footer>
+        <p>© 2026 BookStore Neo. Desarrollado con tecnología de renderizado de alta fidelidad y seguridad SSL.</p>
+    </footer>
+
     <script src="app.js"></script>
 </body>
 </html>
