@@ -136,12 +136,8 @@ app.post('/books', async (req, res) => {
 
 // EDITAR libro
 app.put('/books/:id', async (req, res) => {
-  try {
-    await Book.findByIdAndUpdate(req.params.id, req.body);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ success: false });
-  }
+  await Book.findByIdAndUpdate(req.params.id, req.body);
+  res.json({ success: true });
 });
 
 // ELIMINAR un libro
