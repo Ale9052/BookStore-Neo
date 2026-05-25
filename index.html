@@ -20,11 +20,13 @@
           <input type="text" id="bookSearchInput" placeholder="Buscar título o autor..." style="width: 100% !important; padding: 8px 15px 8px 40px !important; border-radius: 20px !important; border: 1px solid #2d3748 !important; background-color: #1a202c !important; color: white !important; box-sizing: border-box !important;">
         </div>
 
-        <div class="user-menu" style="display: flex !important; align-items: center !important; gap: 8px !important; flex-wrap: nowrap !important;">
+        <div class="user-menu" style="display: flex !important; align-items: center !important; gap: 8px !important;">
           <span id="userGreeting" class="user-email" style="max-width: 120px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-size: 0.85rem !important;"></span>
-          <button id="cartBtn" class="btn-cart customer-only" style="padding: 6px 10px !important; font-size: 0.85rem !important; display: inline-flex !important; align-items: center !important; gap: 5px !important; white-space: nowrap !important; background-color: #00f5d4 !important; color: black !important; border: none !important; border-radius: 4px !important; cursor: pointer; font-weight: bold;">
-            <i class="fas fa-shopping-cart"></i> <span class="cart-text-adaptive">Carrito</span> <span id="cartCount" class="badge-count">0</span>
+          
+          <button id="cartBtn" class="btn-cart customer-only" style="padding: 6px 12px !important; font-size: 0.85rem !important; display: inline-flex !important; align-items: center !important; gap: 5px !important; white-space: nowrap !important; background-color: #00f5d4 !important; color: black !important; border: none !important; border-radius: 4px !important; cursor: pointer; font-weight: bold;">
+            <i class="fas fa-shopping-cart"></i> Mi Carrito <span id="cartCount" class="badge-count" style="background-color: #1a202c; color: #00f5d4; padding: 2px 6px; border-radius: 50%; font-size: 0.75rem; margin-left: 3px;">0</span>
           </button>
+          
           <button id="logoutBtn" class="btn-logout" style="padding: 6px 10px !important; font-size: 0.85rem !important; white-space: nowrap !important; cursor: pointer;">Salir</button>
         </div>
       </div>
@@ -91,6 +93,12 @@
         </div>
 
         <div id="booksContainer" class="books-grid"></div>
+        
+        <div id="noBooksMessage" style="display: none; text-align: center; padding: 40px 20px; color: #a0aec0; background-color: #1a202c; border: 1px dashed #2d3748; border-radius: 8px; margin-top: 2rem;">
+          <i class="fas fa-book-open" style="font-size: 2.5rem; color: #e53e3e; margin-bottom: 10px;"></i>
+          <h4 style="color: white; margin-bottom: 5px; font-size: 1.1rem;">Libro no encontrado</h4>
+          <p style="font-size: 0.95rem;">Lo sentimos, el título o autor que estás buscando no está disponible en nuestra tienda.</p>
+        </div>
       </div>
 
       <div id="admin-view" class="view-section hidden">
@@ -100,7 +108,6 @@
         </div>
 
         <div class="admin-grid">
-          
           <div class="admin-card">
             <h3 id="formActionTitle">Añadir Nuevo Libro</h3>
             <form id="adminBookForm">
@@ -132,7 +139,7 @@
                 <label>URL DE LA PORTADA</label>
                 <div style="display: flex; gap: 5px;">
                   <input type="url" id="adminImage" placeholder="https://..." style="flex: 1;" required>
-                  <button type="button" onclick="document.getElementById('adminImage').value=''" style="background-color: #4a5568; color: white; border: none; padding: 0 10px; border-radius: 4px; cursor: pointer;" title="Limpiar URL"><i class="fas fa-eraser"></i></button>
+                  <button type="button" onclick="document.getElementById('adminImage').value=''" style="background-color: #4a5568; color: white; border: none; padding: 0 12px; border-radius: 4px; cursor: pointer;"><i class="fas fa-eraser"></i></button>
                 </div>
               </div>
 
@@ -140,7 +147,7 @@
                 <label>ENLACE DEL LIBRO COMPLETO (PDF/DRIVE)</label>
                 <div style="display: flex; gap: 5px;">
                   <input type="url" id="adminLink" placeholder="Ej: https://drive.google.com/..." style="flex: 1;" required>
-                  <button type="button" onclick="document.getElementById('adminLink').value=''" style="background-color: #4a5568; color: white; border: none; padding: 0 10px; border-radius: 4px; cursor: pointer;" title="Limpiar URL"><i class="fas fa-eraser"></i></button>
+                  <button type="button" onclick="document.getElementById('adminLink').value=''" style="background-color: #4a5568; color: white; border: none; padding: 0 12px; border-radius: 4px; cursor: pointer;"><i class="fas fa-eraser"></i></button>
                 </div>
               </div>
               
