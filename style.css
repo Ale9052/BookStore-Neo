@@ -88,7 +88,7 @@ body {
 
 .search-bar input {
   width: 100%;
-  padding: 10px 15px;
+  padding: 10px 15px 10px 15px;
   background-color: var(--bg-card);
   border: 1px solid #334155;
   border-radius: 20px;
@@ -175,7 +175,7 @@ body {
 }
 
 /* ==========================================================================
-   4. PANTALLAS DE AUTENTICACIÓN
+   4. PANTALLAS DE AUTENTICACIÓN (LOGIN/REGISTRO)
    ========================================================================== */
 .auth-section {
   width: 100%;
@@ -193,23 +193,122 @@ body {
   width: 100%;
 }
 
-.form-group { margin-bottom: 1.5rem; width: 100%; }
-.form-group label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem; }
-.form-group input, .form-group select { width: 100%; padding: 12px 16px; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; color: var(--text-main); font-size: 1rem; }
+.auth-box h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
 
-.btn-submit { width: 100%; padding: 14px; background-color: var(--btn-bg); color: var(--btn-text); border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+.auth-box .subtitle {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: var(--text-main);
+  font-size: 1rem;
+  outline: none;
+  transition: var(--transition);
+}
+
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--accent);
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 14px;
+  background-color: var(--btn-bg);
+  color: var(--btn-text);
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-submit:hover {
+  background-color: #e2e8f0;
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.auth-switch a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
 
 /* ==========================================================================
    5. CATÁLOGO DE LIBROS
    ========================================================================== */
-.app-content { width: 100%; max-width: 1400px; }
-.categories-container { display: flex; gap: 0.8rem; margin-bottom: 2.5rem; flex-wrap: wrap; }
+.app-content {
+  width: 100%;
+  max-width: 1400px;
+}
+
+.catalog-header {
+  margin-bottom: 2rem;
+}
+
+.catalog-header h2 {
+  font-size: 2rem;
+  margin-bottom: 0.3rem;
+}
+
+.categories-container {
+  display: flex;
+  gap: 0.8rem;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-category {
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid #334155;
+  padding: 10px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.btn-category:hover, .btn-category.active {
+  background-color: transparent;
+  border-color: var(--accent);
+  color: var(--accent);
+}
 
 .books-grid {
   display: grid;
-  /* CORRECCIÓN: Usamos auto-fit y un valor más flexible para que nunca se desborde */
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 2rem;
   width: 100%;
 }
 
@@ -220,33 +319,202 @@ body {
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  transition: var(--transition);
 }
 
-.book-card img { width: 100%; height: 300px; object-fit: cover; border-radius: 8px; margin-bottom: 1rem; }
+.book-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 20px rgba(0,0,0,0.4);
+}
+
+.book-card img {
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.book-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+
+.book-author {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.book-price {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.btn-action {
+  width: 100%;
+  padding: 10px;
+  background-color: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.btn-action:hover {
+  background-color: var(--accent);
+  color: #0f172a;
+}
+
+.btn-add-cart {
+  background-color: #00f5d4;
+  color: #0f172a;
+  border: none;
+}
 
 /* ==========================================================================
-   6. RESPONSIVIDAD (SOLUCIÓN DEFINITIVA)
+   6. PANEL DE ADMINISTRACIÓN E INVENTARIO
+   ========================================================================== */
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 2rem;
+  width: 100%;
+  align-items: start;
+}
+
+.admin-card {
+  background-color: var(--bg-card);
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  border: 1px solid #334155;
+  margin-bottom: 2rem;
+}
+
+.admin-card h3 {
+  margin-bottom: 1.5rem;
+  font-size: 1.4rem;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 0.5rem;
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  background-color: #0f172a;
+  border-radius: 8px;
+  border: 1px solid #334155;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 500px;
+}
+
+.admin-table th, .admin-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #334155;
+  font-size: 0.9rem;
+}
+
+.admin-table th {
+  color: var(--text-muted);
+  background-color: #1e293b;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.admin-actions-cell {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-table-edit {
+  background-color: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.btn-table-delete {
+  background-color: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.btn-table-edit:hover { background-color: var(--accent); color: #0f172a; }
+.btn-table-delete:hover { background-color: var(--danger); color: white; }
+
+/* ==========================================================================
+   7. RESPONSIVIDAD (MEDIA QUERIES PARA CELULARES Y TABLETS)
    ========================================================================== */
 @media (max-width: 768px) {
-  .main-header { height: auto; padding: 1rem 0; }
-  .header-container { flex-direction: column; gap: 1rem; }
-  .header-controls { width: 100%; flex-direction: column; }
-  .search-bar { max-width: 100%; }
-  
+  .main-header {
+    height: auto;
+    padding: 1rem 0;
+  }
+
+  .header-container {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0 1rem;
+  }
+
+  .header-controls {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .search-bar {
+    max-width: 100%;
+  }
+
+  .user-menu {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
   .content-wrapper {
-    /* CORRECCIÓN: Ya no forzamos 160px, dejamos que el flujo natural lo empuje */
-    margin-top: 140px; 
+    margin-top: 160px; /* Espacio extra porque el header se hace más grande en celular */
     padding: 1rem;
   }
 
-  .books-grid {
-    /* CORRECCIÓN: Permitimos que las cards ocupen más espacio en pantallas muy chicas */
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  .auth-box {
+    padding: 1.5rem;
   }
-}
 
-@media (max-width: 480px) {
+  .admin-grid {
+    grid-template-columns: 1fr; /* Pone los bloques uno abajo del otro en celular */
+  }
+
   .books-grid {
-    grid-template-columns: 1fr; /* En celulares muy pequeños, una columna completa */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .book-card img {
+    height: 260px;
   }
 }
