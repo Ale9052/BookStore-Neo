@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('login-box').classList.remove('hidden');
   });
 
-  // CONTROLADOR DE BÚSQUEDA CORREGIDO CON MENSAJE DE ERROR
   document.getElementById('bookSearchInput').addEventListener('input', (e) => {
     filterBooks(e.target.value.toLowerCase().trim());
   });
@@ -28,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selectedBookForModal) {
       await addToCart(selectedBookForModal.id);
       document.getElementById('purchaseModal').style.display = 'none';
-      alert(`¡"${selectedBookForModal.title}" añadido al carrito! Completa tu pago desde el botón superior.`);
+      alert(`¡"${selectedBookForModal.title}" añadido al carrito! Completa tu pago haciendo clic en el botón verde "Mi Carrito" arriba.`);
     }
   });
 
@@ -56,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (error) {
       console.error("Error en login:", error);
-      alert("No se pudo conectar con el servidor de Render.");
+      alert("No se pudo conectar con el servidor.");
     }
   });
 
@@ -130,14 +129,31 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('clearAllBooksBtn').addEventListener('click', async () => {
-    if (confirm('⚠️ ¿Borrar absolutamente todos los libros de la base de datos?')) {
+    if (confirm('⚠️ ¿Borrar todos los libros?')) {
       await fetch(`${API_URL}/admin/books/clear-all`, { method: 'DELETE' });
       loadCatalog();
     }
   });
 });
 
-// CONTROLADOR DE SESIONES CORREGIDO (PREVIENE VISUALIZACIÓN PREVIA)
+// FUNCIÓN MANUAL PARA MANEJAR EL CLIC DEL CARRITO DESDE CUALQUIER DISPOSITIVO
+function abrirModalCarritoManual() {
+  const userId = localStorage.getItem('userId');
+  if (!userId) return;
+  
+  // Aquí llamamos directamente a la función que abre tu modal o interfaz de carrito.
+  // Asegúrate de que esta función coincida con tu lógica de renderizado del carrito:
+  if (typeof toggleCart === "function") {
+    toggleCart(); 
+  } else if (typeof renderCart === "function") {
+    renderCart();
+  } else {
+    // Si tu código maneja el carrito abriendo una sección específica o alerta:
+    alert("Abriendo tu carrito de compras...");
+  }
+}
+
+// MANEJO IMPLACABLE DE SESIONES (APLICANDO ESTILOS INLINE DINÁMICOS)
 async function checkSession() {
   const userId = localStorage.getItem('userId');
   const userRole = localStorage.getItem('userRole');
@@ -147,8 +163,8 @@ async function checkSession() {
   const cartButton = document.getElementById('cartBtn');
 
   if (userId) {
-    // 1. Mostrar barra superior completa (Buscador y menú)
-    headerControls.classList.remove('hidden');
+    // 1. Mostrar barra superior completa forzando Flexbox en línea
+    headerControls.style.setProperty('display', 'flex', 'important');
     document.getElementById('auth-section').classList.add('hidden');
     document.getElementById('app-content').classList.remove('hidden');
     document.getElementById('userGreeting').textContent = userEmail;
@@ -156,16 +172,13 @@ async function checkSession() {
     if (userRole === 'admin') {
       document.getElementById('admin-view').classList.remove('hidden');
       document.getElementById('customer-view').classList.add('hidden');
-      
-      // Ocultar carrito de forma estricta al admin en cualquier dispositivo
       if(cartButton) cartButton.style.setProperty('display', 'none', 'important');
-      
       loadCatalog();
     } else {
       document.getElementById('admin-view').classList.add('hidden');
       document.getElementById('customer-view').classList.remove('hidden');
       
-      // Mostrar el carrito de forma estricta e inline al cliente
+      // Mostrar el carrito al cliente de forma forzada e inequívoca
       if(cartButton) cartButton.style.setProperty('display', 'inline-flex', 'important');
       
       await loadUserPurchases(); 
@@ -173,8 +186,8 @@ async function checkSession() {
       updateCartCount();
     }
   } else {
-    // Si no hay sesión, esconder buscador, carrito y saludo por completo
-    headerControls.classList.add('hidden');
+    // Si no hay sesión iniciada, se destruye y oculta todo el bloque visual del header
+    headerControls.style.setProperty('display', 'none', 'important');
     if(cartButton) cartButton.style.setProperty('display', 'none', 'important');
     
     document.getElementById('auth-section').classList.remove('hidden');
@@ -244,7 +257,6 @@ function renderBooks(booksList) {
     container.appendChild(card);
   });
 
-  // SI NO HAY LIBROS COINCIDENTES MOSTRAR EL MENSAJE EN PANTALLA
   if (visibleBooksCount === 0) {
     if(noBooksMessage) noBooksMessage.style.display = 'block';
   } else {
@@ -290,7 +302,6 @@ function renderInventoryTable(booksList) {
   });
 }
 
-// FILTRADO ADAPTADO PARA LANZAR EL MENSAJE DE ADVERTENCIA SI QUEDA VACÍO
 function filterBooks(search) {
   const filtered = allBooksLocal.filter(b => b.title.toLowerCase().includes(search) || b.author.toLowerCase().includes(search));
   renderBooks(filtered);
