@@ -331,7 +331,7 @@ function renderBooks(booksList) {
 }
 
 function handleBookAccess(bookId) {
-  const book = allBooksLocal.find(b => b.id === bookId);
+ const book = allBooksLocal.find(b => b._id === id);
   const userRole = localStorage.getItem('userRole');
   const hasAccess = userRole === 'admin' || userPaidBookIds.includes(Number(book.id));
 
