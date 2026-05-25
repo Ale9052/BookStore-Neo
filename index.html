@@ -9,23 +9,23 @@
 </head>
 <body>
 
-  <header class="main-header">
-    <div class="header-container">
+  <header class="main-header" style="padding: 10px 15px !important;">
+    <div class="header-container" style="display: flex !important; flex-wrap: wrap !important; justify-content: space-between !important; align-items: center !important; gap: 10px !important;">
       <div class="logo">BookStore<span class="dot">.</span></div>
       
-      <div id="header-controls" class="header-controls hidden">
+      <div id="header-controls" class="header-controls hidden" style="display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 10px !important; flex: 1 !important; justify-content: flex-end !important;">
         
-        <div class="search-bar" style="position: relative !important; display: inline-block !important; width: 100% !important; max-width: 500px !important;">
-          <i class="fas fa-search" style="position: absolute !important; left: 15px !important; top: 50% !important; transform: translateY(-50%) !important; color: #a0aec0 !important; pointer-events: none !important; z-index: 999 !important; margin: 0 !important; padding: 0 !important; font-size: 1rem !important;"></i>
-          <input type="text" id="bookSearchInput" placeholder="Buscar tu próxima lectura por título o autor..." style="width: 100% !important; padding: 10px 15px 10px 42px !important; border-radius: 20px !important; border: 1px solid #2d3748 !important; background-color: #1a202c !important; color: white !important; box-sizing: border-box !important;">
+        <div class="search-bar" style="position: relative !important; display: inline-block !important; width: 100% !important; max-width: 400px !important; min-width: 200px !important;">
+          <i class="fas fa-search" style="position: absolute !important; left: 15px !important; top: 50% !important; transform: translateY(-50%) !important; color: #a0aec0 !important; pointer-events: none !important; z-index: 999 !important; margin: 0 !important; padding: 0 !important;"></i>
+          <input type="text" id="bookSearchInput" placeholder="Buscar título o autor..." style="width: 100% !important; padding: 8px 15px 8px 40px !important; border-radius: 20px !important; border: 1px solid #2d3748 !important; background-color: #1a202c !important; color: white !important; box-sizing: border-box !important;">
         </div>
 
-        <div class="user-menu">
-          <span id="userGreeting" class="user-email"></span>
-          <button id="cartBtn" class="btn-cart customer-only">
-            <i class="fas fa-shopping-cart"></i> Mi Carrito <span id="cartCount" class="badge-count">0</span>
+        <div class="user-menu" style="display: flex !important; align-items: center !important; gap: 8px !important; flex-wrap: nowrap !important;">
+          <span id="userGreeting" class="user-email" style="max-width: 120px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-size: 0.85rem !important;"></span>
+          <button id="cartBtn" class="btn-cart customer-only" style="padding: 6px 10px !important; font-size: 0.85rem !important; display: inline-flex !important; align-items: center !important; gap: 5px !important; white-space: nowrap !important; background-color: #00f5d4 !important; color: black !important; border: none !important; border-radius: 4px !important; cursor: pointer; font-weight: bold;">
+            <i class="fas fa-shopping-cart"></i> <span class="cart-text-adaptive">Carrito</span> <span id="cartCount" class="badge-count">0</span>
           </button>
-          <button id="logoutBtn" class="btn-logout">Cerrar Sesión</button>
+          <button id="logoutBtn" class="btn-logout" style="padding: 6px 10px !important; font-size: 0.85rem !important; white-space: nowrap !important; cursor: pointer;">Salir</button>
         </div>
       </div>
     </div>
@@ -34,11 +34,9 @@
   <main class="content-wrapper">
 
     <section id="auth-section" class="auth-section">
-      
       <div id="login-box" class="auth-box">
         <h2>Bienvenido de nuevo</h2>
         <p class="subtitle">Ingresa con tu cuenta verídica de Gmail</p>
-        
         <form id="loginForm">
           <div class="form-group">
             <label>CORREO ELECTRÓNICO</label>
@@ -56,7 +54,6 @@
       <div id="register-box" class="auth-box hidden">
         <h2>Crear una cuenta</h2>
         <p class="subtitle">Se verificará que introduzcas un correo @gmail.com real</p>
-        
         <form id="registerForm">
           <div class="form-group">
             <label>NOMBRE COMPLETO</label>
@@ -74,7 +71,6 @@
         </form>
         <p class="auth-switch">¿Ya tienes cuenta? <a href="#" id="showLogin">Inicia sesión</a></p>
       </div>
-
     </section>
 
     <section id="app-content" class="app-content hidden">
@@ -85,13 +81,13 @@
           <p>Adquiere los títulos literarios más influyentes del planeta</p>
         </div>
 
-        <div class="categories-container">
-          <button class="btn-category active" data-category="Todos">🌐 Todos los libros</button>
+        <div class="categories-container" style="display: flex !important; flex-wrap: wrap !important; gap: 5px !important;">
+          <button class="btn-category active" data-category="Todos">🌐 Todos</button>
           <button class="btn-category" data-category="Programación">💻 Programación</button>
           <button class="btn-category" data-category="Fantasía">🧙‍♂️ Fantasía</button>
           <button class="btn-category" data-category="Terror">👻 Terror</button>
           <button class="btn-category" data-category="Superación">📈 Superación</button>
-          <button class="btn-category" data-category="Ciencia Ficción">🚀 Ciencia Ficción</button>
+          <button class="btn-category" data-category="Ciencia Ficción">🚀 C. Ficción</button>
         </div>
 
         <div id="booksContainer" class="books-grid"></div>
@@ -131,18 +127,25 @@
                 <label>PRECIO (Q)</label>
                 <input type="number" id="adminPrice" step="0.01" placeholder="Ej: 85.00" required>
               </div>
+              
               <div class="form-group">
                 <label>URL DE LA PORTADA</label>
-                <input type="url" id="adminImage" placeholder="https://..." required>
+                <div style="display: flex; gap: 5px;">
+                  <input type="url" id="adminImage" placeholder="https://..." style="flex: 1;" required>
+                  <button type="button" onclick="document.getElementById('adminImage').value=''" style="background-color: #4a5568; color: white; border: none; padding: 0 10px; border-radius: 4px; cursor: pointer;" title="Limpiar URL"><i class="fas fa-eraser"></i></button>
+                </div>
               </div>
+
               <div class="form-group">
                 <label>ENLACE DEL LIBRO COMPLETO (PDF/DRIVE)</label>
-                <input type="url" id="adminLink" placeholder="Ej: https://drive.google.com/..." required>
+                <div style="display: flex; gap: 5px;">
+                  <input type="url" id="adminLink" placeholder="Ej: https://drive.google.com/..." style="flex: 1;" required>
+                  <button type="button" onclick="document.getElementById('adminLink').value=''" style="background-color: #4a5568; color: white; border: none; padding: 0 10px; border-radius: 4px; cursor: pointer;" title="Limpiar URL"><i class="fas fa-eraser"></i></button>
+                </div>
               </div>
               
-              <div class="admin-button-group" style="display: flex; gap: 10px; margin-top: 1.5rem;">
-                <button type="submit" id="btnAdminSubmit" class="btn-submit" style="flex: 2;">Publicar Libro</button>
-                <button type="button" id="btnClearFormFields" class="btn-clear" style="flex: 1; background-color: #4a5568; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9rem;"><i class="fas fa-eraser"></i> Vaciar</button>
+              <div class="admin-button-group" style="margin-top: 1.5rem;">
+                <button type="submit" id="btnAdminSubmit" class="btn-submit" style="width: 100% !important;">Publicar Libro</button>
               </div>
             </form>
           </div>
@@ -152,53 +155,37 @@
               <h3>Inventario de Libros</h3>
               <button id="clearAllBooksBtn" class="btn-clear" style="background-color: #dc3545; color: white; border: none; padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; cursor: pointer; font-weight: bold;"><i class="fas fa-dumpster"></i> Borrar Todo</button>
             </div>
-            <p class="tip">Aquí puedes ver, controlar, editar y eliminar los libros disponibles.</p>
-            <div class="table-container">
+            <div class="table-container" style="overflow-x: auto !important;">
               <table class="admin-table">
                 <thead>
                   <tr>
                     <th>Portada</th>
-                    <th>Título / Autor</th>
+                    <th>Título</th>
                     <th>Categoría</th>
                     <th>Precio</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
-                <tbody id="inventoryTableBody">
-                  </tbody>
+                <tbody id="inventoryTableBody"></tbody>
               </table>
             </div>
           </div>
-
         </div>
-
-        <div class="admin-card" style="margin-top: 2rem;">
-          <div class="card-header-inline" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3>Historial de Ventas Globales</h3>
-            <button id="clearSalesBtn" class="btn-clear" style="background-color: #718096; color: white; border: none; padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; cursor: pointer;"><i class="fas fa-trash"></i> Limpiar Historial</button>
-          </div>
-          <p class="tip">💡 Tip: El sistema registra de forma automática los pagos entrantes.</p>
-          <div class="table-container">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>ID Orden</th>
-                  <th>Cliente</th>
-                  <th>Fecha y Hora</th>
-                  <th>Total</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody id="salesLogTableBody">
-                </tbody>
-            </table>
-          </div>
-        </div>
-
       </div>
-
     </section>
   </main>
+
+  <div id="purchaseModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center; padding: 15px;">
+    <div style="background-color: #1a202c; border: 2px solid #2d3748; padding: 25px; border-radius: 8px; max-width: 400px; width: 100%; text-align: center; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+      <i class="fas fa-lock" style="font-size: 3rem; color: #ffc107; margin-bottom: 15px;"></i>
+      <h3 style="margin-bottom: 10px; font-size: 1.3rem;">Contenido Protegido</h3>
+      <p style="color: #a0aec0; margin-bottom: 20px; font-size: 0.95rem; line-height: 1.4;">Para poder leer o descargar este libro completo, primero es necesario realizar su compra en la plataforma.</p>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="modalAddToCartBtn" style="background-color: #00f5d4; color: black; border: none; padding: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 1rem;"><i class="fas fa-shopping-cart"></i> Añadir al Carrito para Comprar</button>
+        <button onclick="document.getElementById('purchaseModal').style.display='none'" style="background-color: #4a5568; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Cancelar</button>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
