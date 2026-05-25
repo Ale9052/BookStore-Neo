@@ -305,9 +305,10 @@ body {
   color: var(--accent);
 }
 
+/* CAMBIO 1: Ajustado de 260px a 200px para que quepa en móviles */
 .books-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 2rem;
   width: 100%;
 }
@@ -466,7 +467,7 @@ body {
 .btn-table-delete:hover { background-color: var(--danger); color: white; }
 
 /* ==========================================================================
-   7. RESPONSIVIDAD (MEDIA QUERIES PARA CELULARES Y TABLETS)
+   7. RESPONSIVIDAD (CORREGIDO PARA QUE NO SE VEA MAL)
    ========================================================================== */
 @media (max-width: 768px) {
   .main-header {
@@ -496,25 +497,23 @@ body {
     gap: 0.5rem;
   }
 
+  /* CAMBIO 2: Reducido a 100px para que no haya tanto espacio en blanco */
   .content-wrapper {
-    margin-top: 160px; /* Espacio extra porque el header se hace más grande en celular */
+    margin-top: 100px; 
     padding: 1rem;
   }
 
-  .auth-box {
-    padding: 1.5rem;
-  }
-
   .admin-grid {
-    grid-template-columns: 1fr; /* Pone los bloques uno abajo del otro en celular */
+    grid-template-columns: 1fr;
   }
 
+  /* CAMBIO 3: Aseguramos que la cuadrícula se adapte mejor en móvil */
   .books-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 1rem;
   }
 
   .book-card img {
-    height: 260px;
+    height: 220px;
   }
 }
