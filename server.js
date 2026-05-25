@@ -1,5 +1,5 @@
 const express = require('express');
-const sqlite3 = require('sqlite3-offline').verbose(); // Solución al error ERR_DLOPEN_FAILED
+const sqlite3 = require('sqlite3').verbose(); // Regresamos al estándar compatible con rebuild
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path'); 
@@ -15,7 +15,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Ruta persistente/temporal en Render
+// Ruta persistente/temporal en Render para la base de datos
 const dbPath = path.join('/tmp', 'libreria.db');
 const db = new sqlite3.Database(dbPath);
 
@@ -116,23 +116,6 @@ app.post('/books', (req, res) => {
 app.delete('/books/:id', (req, res) => {
   db.run('DELETE FROM books WHERE id = ?', [req.params.id], function(err) {
     if (err) return res.json({ success: false });
-    res.json({ success: true });
-  });
-});
-
-// --- RUTAS DEL CARRITO ---
-app.get('/cart/:userId', (req, res) => {
-  const query = `SELECT cart.id as cartItemId, books.id as id, books.title, books.author, books.price, books.image, cart.quantity 
-                 FROM cart JOIN books ON cart.book_id = books.id WHERE cart.user_id = ?`;
-  db.all(query, [req.params.userId], (err, rows) => {
-    if (err) return res.json([]);
-    res.json(rows);
-  });
-});
-
-app.post('/cart', (req, res) => {
-  const { user_id, book_id } = req.body;
-  db.run('INSERT INTO cart (user_id, book_id) VALUES (?, ?)', [user_id, book_id], function() {
     res.json({ success: true });
   });
 });
