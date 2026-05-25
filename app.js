@@ -20,46 +20,60 @@ document.addEventListener('DOMContentLoaded', () => {
     filterBooks(e.target.value.toLowerCase().trim());
   });
 
-  // FORMULARIO DE LOGIN
+  // CONTROL DE INICIO DE SESIÓN
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value.trim();
 
-    const res = await fetch(`${API_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (data.success) {
-      localStorage.setItem('userId', data.userId);
-      localStorage.setItem('userEmail', email);
-      localStorage.setItem('userRole', data.role);
-      localStorage.setItem('userName', data.name);
-      checkSession();
-    } else {
-      alert(data.message);
+    try {
+      const res = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        localStorage.setItem('userId', data.userId);
+        localStorage.setItem('userEmail', email);
+        localStorage.setItem('userRole', data.role);
+        localStorage.setItem('userName', data.name || email);
+        
+        // Ejecución inmediata de la transición de interfaz
+        checkSession();
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error("Error en login:", error);
+      alert("No se pudo conectar con el servidor.");
     }
   });
 
-  // FORMULARIO DE REGISTRO
+  // CONTROL DE REGISTRO
   document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('registerName').value.trim();
     const email = document.getElementById('registerEmail').value.trim();
     const password = document.getElementById('registerPassword').value.trim();
 
-    const res = await fetch(`${API_URL}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password })
-    });
-    const data = await res.json();
-    if (data.success) {
-      alert('¡Cuenta creada! Inicia sesión.');
-      document.getElementById('register-box').classList.add('hidden');
-      document.getElementById('login-box').classList.remove('hidden');
+    try {
+      const res = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('¡Cuenta creada con éxito! Ahora puedes iniciar sesión.');
+        document.getElementById('register-box').classList.add('hidden');
+        document.getElementById('login-box').classList.remove('hidden');
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error("Error en registro:", error);
     }
   });
 
@@ -78,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ENVIAR NUEVO LIBRO (ADMIN)
+  // AÑADIR LIBRO (ADMIN)
   document.getElementById('adminBookForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const title = document.getElementById('adminTitle').value.trim();
@@ -108,11 +122,11 @@ function checkSession() {
   const userEmail = localStorage.getItem('userEmail');
 
   if (userId) {
+    // Esconder login y mostrar app principal
     document.getElementById('auth-section').classList.add('hidden');
     document.getElementById('app-content').classList.remove('hidden');
     
-    // Mapeo del saludo solicitado (Nombre en vez de Correo)
-    document.getElementById('userGreeting').textContent = userRole === 'admin' ? userEmail : (userName || userEmail);
+    document.getElementById('userGreeting').textContent = userRole === 'admin' ? userEmail : userName;
 
     if (userRole === 'admin') {
       document.getElementById('admin-view').classList.remove('hidden');
@@ -121,22 +135,29 @@ function checkSession() {
     } else {
       document.getElementById('admin-view').classList.add('hidden');
       document.getElementById('customer-view').classList.remove('hidden');
+      updateCartCount();
     }
     loadCatalog();
   }
 }
 
 async function loadCatalog() {
-  const res = await fetch(`${API_URL}/books`);
-  allBooksLocal = await res.json();
-  renderBooks(allBooksLocal);
+  try {
+    const res = await fetch(`${API_URL}/books`);
+    allBooksLocal = await res.json();
+    renderBooks(allBooksLocal);
+  } catch (err) {
+    console.error("Error cargando catálogo:", err);
+  }
 }
 
 function renderBooks(booksList) {
   const container = document.getElementById('booksContainer');
+  if(!container) return;
   container.innerHTML = '';
   
   const activeCategory = document.querySelector('.btn-category.active').getAttribute('data-category');
+  const userRole = localStorage.getItem('userRole');
 
   booksList.forEach(book => {
     if (activeCategory !== 'Todos' && book.category !== activeCategory) return;
@@ -152,9 +173,13 @@ function renderBooks(booksList) {
       <div>
         <div class="book-price">Q${book.price.toFixed(2)}</div>
         <button class="btn-action" onclick="viewBook('${book.full_link}')">Ver Libro Completo 🔒</button>
-        <div class="admin-actions">
-          <button onclick="deleteBook(${book.id})">Eliminar</button>
-        </div>
+        ${userRole === 'admin' ? `
+          <div class="admin-actions">
+            <button onclick="deleteBook(${book.id})">Eliminar</button>
+          </div>
+        ` : `
+          <button class="btn-action" style="margin-top:8px; background:var(--accent-green); color:white; border-color:var(--accent-green);" onclick="addToCart(${book.id})">🛒 Añadir al Carrito</button>
+        `}
       </div>
     `;
     container.appendChild(card);
@@ -166,8 +191,34 @@ function filterBooks(search) {
   renderBooks(filtered);
 }
 
+async function addToCart(bookId) {
+  const userId = localStorage.getItem('userId');
+  await fetch(`${API_URL}/cart`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, book_id: bookId })
+  });
+  updateCartCount();
+}
+
+async function updateCartCount() {
+  const userId = localStorage.getItem('userId');
+  if(!userId) return;
+  const res = await fetch(`${API_URL}/cart/${userId}`);
+  const cartItems = await res.json();
+  document.getElementById('cartCount').textContent = cartItems.length;
+}
+
+function viewBook(link) {
+  if(link && link !== 'undefined') {
+    window.open(link, '_blank');
+  } else {
+    alert("Enlace no disponible.");
+  }
+}
+
 async function deleteBook(id) {
-  if (confirm('¿Eliminar este libro?')) {
+  if (confirm('¿Eliminar este libro del sistema?')) {
     await fetch(`${API_URL}/books/${id}`, { method: 'DELETE' });
     loadCatalog();
   }
@@ -177,6 +228,7 @@ async function loadAdminSales() {
   const res = await fetch(`${API_URL}/admin/sales`);
   const sales = await res.json();
   const tbody = document.getElementById('salesLogTableBody');
+  if(!tbody) return;
   tbody.innerHTML = '';
   sales.forEach(sale => {
     tbody.innerHTML += `
