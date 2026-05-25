@@ -1,6 +1,7 @@
 // Dirección del Backend en Render
 const API_URL = "https://bookstore-neo.onrender.com"; 
 let allBooksLocal = [];
+let isEditing = false; // Estado para saber si estamos editando
 
 document.addEventListener('DOMContentLoaded', () => {
   checkSession();
@@ -21,6 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Buscador de texto en tiempo real
   document.getElementById('bookSearchInput').addEventListener('input', (e) => {
     filterBooks(e.target.value.toLowerCase().trim());
+  });
+
+  // BOTÓN DE VACIAR CAMPOS DEL FORMULARIO (Evita borrar a mano URLs gigantes)
+  document.getElementById('btnClearFormFields').addEventListener('click', () => {
+    resetAdminForm();
   });
 
   // FORMULARIO DE INICIO DE SESIÓN
@@ -95,9 +101,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // GUARDAR NUEVO LIBRO (PANEL ADMIN)
+  // GUARDAR NUEVO LIBRO O ACTUALIZAR EXISTENTE (PANEL ADMIN)
   document.getElementById('adminBookForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const id = document.getElementById('adminBookId').value;
     const title = document.getElementById('adminTitle').value.trim();
     const author = document.getElementById('adminAuthor').value.trim();
     const category = document.getElementById('adminCategory').value.trim();
@@ -105,25 +112,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const image = document.getElementById('adminImage').value.trim();
     const full_link = document.getElementById('adminLink').value.trim();
 
+    // Si estamos editando, usamos PUT a /books/:id; de lo contrario POST a /books
+    const url = isEditing ? `${API_URL}/books/${id}` : `${API_URL}/books`;
+    const method = isEditing ? 'PUT' : 'POST';
+
     try {
-      const res = await fetch(`${API_URL}/books`, {
-        method: 'POST',
+      const res = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, author, category, price, image, full_link })
       });
       const data = await res.json();
       if (data.success) {
-        alert("¡Libro publicado correctamente en el catálogo!");
-        document.getElementById('adminBookForm').reset();
-        
-        // El retraso de 500ms le da el tiempo exacto al servidor para guardar 
-        // el archivo antes de que lo volvamos a solicitar
-        setTimeout(() => {
-          loadCatalog();
-        }, 500);
+        alert(isEditing ? "¡Libro actualizado correctamente!" : "¡Libro publicado correctamente!");
+        resetAdminForm();
+        setTimeout(() => { loadCatalog(); }, 500);
       }
     } catch (err) {
-      console.error("Error al publicar libro:", err);
+      console.error("Error al procesar libro:", err);
+    }
+  });
+
+  // BORRAR TODO EL INVENTARIO DE LIBROS
+  document.getElementById('clearAllBooksBtn').addEventListener('click', async () => {
+    if (confirm('⚠️ ¡ADVERTENCIA CRÍTICA!\n¿Deseas eliminar ABSOLUTAMENTE TODOS los libros del catálogo de forma permanente?')) {
+      try {
+        await fetch(`${API_URL}/admin/books/clear-all`, { method: 'DELETE' });
+        loadCatalog();
+      } catch (error) {
+        console.error("Error al vaciar catálogo:", error);
+      }
     }
   });
 
@@ -157,7 +175,6 @@ function checkSession() {
       const clientElements = document.querySelectorAll('.customer-only');
       clientElements.forEach(el => el.classList.add('hidden'));
       
-      // Al ser Administrador cargamos inmediatamente el catálogo para armar el inventario
       loadCatalog();
       loadAdminSales();
     } else {
@@ -179,7 +196,7 @@ async function loadCatalog() {
     const res = await fetch(`${API_URL}/books`);
     allBooksLocal = await res.json();
     renderBooks(allBooksLocal);
-    renderInventoryTable(allBooksLocal); // Actualiza la tabla de administración al mismo tiempo
+    renderInventoryTable(allBooksLocal);
   } catch (err) {
     console.error("Error cargando catálogo:", err);
   }
@@ -217,7 +234,7 @@ function renderBooks(booksList) {
   });
 }
 
-// MOSTRAR LA TABLA DEL INVENTARIO (ADMINISTRADOR)
+// MOSTRAR LA TABLA DEL INVENTARIO (ADMINISTRADOR CON BOTONES EDITAR Y ELIMINAR)
 function renderInventoryTable(booksList) {
   const tableBody = document.getElementById('inventoryTableBody');
   if (!tableBody) return;
@@ -234,13 +251,49 @@ function renderInventoryTable(booksList) {
       <td><span class="status-badge">${book.category}</span></td>
       <td><strong>Q${parseFloat(book.price).toFixed(2)}</strong></td>
       <td>
-        <div class="admin-actions-cell">
+        <div class="admin-actions-cell" style="display: flex; gap: 5px;">
+          <button class="btn-table-edit" style="background-color: #ffc107; color: black; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;" onclick="startEditBook(${book.id})"><i class="fas fa-edit"></i> Editar</button>
           <button class="btn-table-delete" onclick="deleteBook(${book.id})"><i class="fas fa-trash"></i> Eliminar</button>
         </div>
       </td>
     `;
     tableBody.appendChild(tr);
   });
+}
+
+// PREPARAR FORMULARIO PARA EDITAR
+function startEditBook(id) {
+  const book = allBooksLocal.find(b => b.id === id);
+  if (!book) return;
+
+  isEditing = true;
+  document.getElementById('formActionTitle').textContent = "Modificar Libro Seleccionado";
+  document.getElementById('btnAdminSubmit').textContent = "Guardar Cambios";
+  document.getElementById('btnAdminSubmit').style.backgroundColor = "#ffc107";
+  document.getElementById('btnAdminSubmit').style.color = "black";
+
+  // Cargar datos actuales en los inputs
+  document.getElementById('adminBookId').value = book.id;
+  document.getElementById('adminTitle').value = book.title;
+  document.getElementById('adminAuthor').value = book.author;
+  document.getElementById('adminCategory').value = book.category;
+  document.getElementById('adminPrice').value = book.price;
+  document.getElementById('adminImage').value = book.image;
+  document.getElementById('adminLink').value = book.full_link;
+  
+  // Hacer scroll automático hacia el formulario para editar con comodidad
+  document.getElementById('adminBookForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+// REINICIAR EL FORMULARIO A SU ESTADO ORIGINAL
+function resetAdminForm() {
+  isEditing = false;
+  document.getElementById('adminBookForm').reset();
+  document.getElementById('adminBookId').value = '';
+  document.getElementById('formActionTitle').textContent = "Añadir Nuevo Libro";
+  document.getElementById('btnAdminSubmit').textContent = "Publicar Libro";
+  document.getElementById('btnAdminSubmit').style.backgroundColor = ""; 
+  document.getElementById('btnAdminSubmit').style.color = "";
 }
 
 function filterBooks(search) {
@@ -278,7 +331,7 @@ function viewBook(link) {
   }
 }
 
-// ELIMINAR LIBRO DESDE EL INVENTARIO
+// ELIMINAR LIBRO INDIVIDUAL
 async function deleteBook(id) {
   if (confirm('¿Eliminar este libro de manera permanente del catálogo e inventario?')) {
     await fetch(`${API_URL}/books/${id}`, { method: 'DELETE' });
