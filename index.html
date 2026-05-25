@@ -9,25 +9,25 @@
 </head>
 <body>
 
-  <header class="main-header" style="padding: 10px 15px !important;">
-    <div class="header-container" style="display: flex !important; flex-wrap: wrap !important; justify-content: space-between !important; align-items: center !important; gap: 10px !important;">
-      <div class="logo">BookStore<span class="dot">.</span></div>
+  <header class="main-header" style="padding: 10px 15px !important; min-height: 60px !important;">
+    <div class="header-container" style="display: flex !important; justify-content: space-between !important; align-items: center !important; gap: 15px !important; width: 100% !important;">
+      <div class="logo" style="white-space: nowrap !important;">BookStore<span class="dot">.</span></div>
       
-      <div id="header-controls" style="display: none !important; flex-wrap: wrap !important; align-items: center !important; gap: 10px !important; flex: 1 !important; justify-content: flex-end !important;">
+      <div id="header-controls" style="display: none; flex-grow: 1 !important; justify-content: space-between !important; align-items: center !important; gap: 15px !important;">
         
-        <div class="search-bar" style="position: relative !important; display: inline-block !important; width: 100% !important; max-width: 400px !important; min-width: 200px !important;">
-          <i class="fas fa-search" style="position: absolute !important; left: 15px !important; top: 50% !important; transform: translateY(-50%) !important; color: #a0aec0 !important; pointer-events: none !important; z-index: 999 !important; margin: 0 !important; padding: 0 !important;"></i>
-          <input type="text" id="bookSearchInput" placeholder="Buscar título o autor..." style="width: 100% !important; padding: 8px 15px 8px 40px !important; border-radius: 20px !important; border: 1px solid #2d3748 !important; background-color: #1a202c !important; color: white !important; box-sizing: border-box !important;">
+        <div class="search-bar" style="position: relative !important; width: 100% !important; max-width: 450px !important; margin: 0 auto !important;">
+          <i class="fas fa-search" style="position: absolute !important; left: 15px !important; top: 50% !important; transform: translateY(-50%) !important; color: #a0aec0 !important; z-index: 10 !important;"></i>
+          <input type="text" id="bookSearchInput" placeholder="Buscar tu próxima lectura por título o autor..." style="width: 100% !important; padding: 10px 15px 10px 45px !important; border-radius: 20px !important; border: 1px solid #2d3748 !important; background-color: #1a202c !important; color: white !important; box-sizing: border-box !important; outline: none !important;">
         </div>
 
-        <div class="user-menu" style="display: flex !important; align-items: center !important; gap: 8px !important;">
-          <span id="userGreeting" class="user-email" style="max-width: 120px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-size: 0.85rem !important;"></span>
+        <div class="user-menu" style="display: flex !important; align-items: center !important; gap: 12px !important; margin-left: auto !important;">
+          <span id="userGreeting" class="user-email" style="max-width: 150px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-size: 0.9rem !important; color: #a0aec0 !important;"></span>
           
-          <button id="cartBtn" class="customer-only" onclick="abrirModalCarritoManual()" style="display: none !important; padding: 6px 12px !important; font-size: 0.85rem !important; align-items: center !important; gap: 5px !important; white-space: nowrap !important; background-color: #00f5d4 !important; color: black !important; border: none !important; border-radius: 4px !important; cursor: pointer; font-weight: bold; z-index: 99999 !important;">
-            <i class="fas fa-shopping-cart"></i> Mi Carrito <span id="cartCount" class="badge-count" style="background-color: #1a202c; color: #00f5d4; padding: 2px 6px; border-radius: 50%; font-size: 0.75rem; margin-left: 3px;">0</span>
+          <button id="cartBtn" class="customer-only" onclick="abrirModalCarritoManual()" style="display: none; padding: 8px 16px !important; font-size: 0.85rem !important; align-items: center !important; gap: 6px !important; white-space: nowrap !important; background-color: #00f5d4 !important; color: black !important; border: none !important; border-radius: 20px !important; cursor: pointer; font-weight: bold;">
+            <i class="fas fa-shopping-cart"></i> Mi Carrito <span id="cartCount" style="background-color: #1a202c; color: #00f5d4; padding: 2px 7px; border-radius: 50%; font-size: 0.75rem; margin-left: 4px; font-weight: bold;">0</span>
           </button>
           
-          <button id="logoutBtn" class="btn-logout" style="padding: 6px 10px !important; font-size: 0.85rem !important; white-space: nowrap !important; cursor: pointer;">Salir</button>
+          <button id="logoutBtn" class="btn-logout" style="padding: 8px 15px !important; font-size: 0.85rem !important; border-radius: 6px !important; white-space: nowrap !important; cursor: pointer; background-color: transparent; border: 1px solid #e53e3e; color: #e53e3e; font-weight: bold;">Salir</button>
         </div>
       </div>
     </div>
@@ -94,10 +94,16 @@
 
         <div id="booksContainer" class="books-grid"></div>
         
-        <div id="noBooksMessage" style="display: none; text-align: center; padding: 40px 20px; color: #a0aec0; background-color: #1a202c; border: 1px dashed #2d3748; border-radius: 8px; margin-top: 2rem;">
-          <i class="fas fa-book-open" style="font-size: 2.5rem; color: #e53e3e; margin-bottom: 10px;"></i>
+        <div id="noBooksFoundMessage" style="display: none; text-align: center; padding: 40px 20px; color: #a0aec0; background-color: #1a202c; border: 1px dashed #2d3748; border-radius: 8px; margin-top: 2rem;">
+          <i class="fas fa-search-minus" style="font-size: 2.5rem; color: #ffc107; margin-bottom: 10px;"></i>
           <h4 style="color: white; margin-bottom: 5px; font-size: 1.1rem;">Libro no encontrado</h4>
           <p style="font-size: 0.95rem;">Lo sentimos, el título o autor que estás buscando no está disponible en nuestra tienda.</p>
+        </div>
+
+        <div id="emptyStoreMessage" style="display: none; text-align: center; padding: 50px 20px; color: #a0aec0; background-color: #1a202c; border: 1px solid #2d3748; border-radius: 8px; margin-top: 2rem;">
+          <i class="fas fa-book-open" style="font-size: 3rem; color: #4a5568; margin-bottom: 12px;"></i>
+          <h4 style="color: white; margin-bottom: 5px; font-size: 1.2rem;">Librería en mantenimiento</h4>
+          <p style="font-size: 0.95rem;">Por el momento no se han publicado libros en la plataforma. ¡Vuelve más tarde!</p>
         </div>
       </div>
 
