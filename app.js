@@ -1,4 +1,4 @@
-const API_URL = window.location.origin;
+const API_URL = "https://bookstore-neo.onrender.com";
 let allBooksLocal = [];
 
 document.addEventListener('DOMContentLoaded', () => {
