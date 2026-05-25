@@ -1,7 +1,7 @@
 // Dirección del Backend en Render
 const API_URL = "https://bookstore-neo.onrender.com"; 
 let allBooksLocal = [];
-let isEditing = false; // Estado para saber si estamos editando
+let isEditing = false; 
 
 document.addEventListener('DOMContentLoaded', () => {
   checkSession();
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     filterBooks(e.target.value.toLowerCase().trim());
   });
 
-  // BOTÓN DE VACIAR CAMPOS DEL FORMULARIO (Evita borrar a mano URLs gigantes)
+  // BOTÓN DE VACIAR CAMPOS DEL FORMULARIO
   document.getElementById('btnClearFormFields').addEventListener('click', () => {
     resetAdminForm();
   });
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // GUARDAR NUEVO LIBRO O ACTUALIZAR EXISTENTE (PANEL ADMIN)
+  // GUARDAR NUEVO LIBRO O ACTUALIZAR EXISTENTE
   document.getElementById('adminBookForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('adminBookId').value;
@@ -112,7 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const image = document.getElementById('adminImage').value.trim();
     const full_link = document.getElementById('adminLink').value.trim();
 
-    // Si estamos editando, usamos PUT a /books/:id; de lo contrario POST a /books
     const url = isEditing ? `${API_URL}/books/${id}` : `${API_URL}/books`;
     const method = isEditing ? 'PUT' : 'POST';
 
@@ -173,7 +172,7 @@ function checkSession() {
       document.getElementById('customer-view').classList.add('hidden');
       
       const clientElements = document.querySelectorAll('.customer-only');
-      clientElements.forEach(el => el.classList.add('hidden'));
+      clientElements.forEach(el => el.className += ' hidden');
       
       loadCatalog();
       loadAdminSales();
@@ -246,14 +245,14 @@ function renderInventoryTable(booksList) {
       <td><img src="${book.image || 'https://via.placeholder.com/150'}" alt="Portada" style="width: 40px; height: 55px; object-fit: cover; border-radius: 4px;"></td>
       <td>
         <strong>${book.title}</strong><br>
-        <span style="color: var(--text-muted); font-size: 0.8rem;">Por ${book.author}</span>
+        <span style="color: #a0aec0; font-size: 0.8rem;">Por ${book.author}</span>
       </td>
       <td><span class="status-badge">${book.category}</span></td>
       <td><strong>Q${parseFloat(book.price).toFixed(2)}</strong></td>
       <td>
         <div class="admin-actions-cell" style="display: flex; gap: 5px;">
-          <button class="btn-table-edit" style="background-color: #ffc107; color: black; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;" onclick="startEditBook(${book.id})"><i class="fas fa-edit"></i> Editar</button>
-          <button class="btn-table-delete" onclick="deleteBook(${book.id})"><i class="fas fa-trash"></i> Eliminar</button>
+          <button type="button" style="background-color: #ffc107; color: black; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;" onclick="startEditBook(${book.id})"><i class="fas fa-edit"></i> Editar</button>
+          <button type="button" style="background-color: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;" onclick="deleteBook(${book.id})"><i class="fas fa-trash"></i> Eliminar</button>
         </div>
       </td>
     `;
@@ -272,7 +271,6 @@ function startEditBook(id) {
   document.getElementById('btnAdminSubmit').style.backgroundColor = "#ffc107";
   document.getElementById('btnAdminSubmit').style.color = "black";
 
-  // Cargar datos actuales en los inputs
   document.getElementById('adminBookId').value = book.id;
   document.getElementById('adminTitle').value = book.title;
   document.getElementById('adminAuthor').value = book.author;
@@ -281,7 +279,6 @@ function startEditBook(id) {
   document.getElementById('adminImage').value = book.image;
   document.getElementById('adminLink').value = book.full_link;
   
-  // Hacer scroll automático hacia el formulario para editar con comodidad
   document.getElementById('adminBookForm').scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -331,7 +328,6 @@ function viewBook(link) {
   }
 }
 
-// ELIMINAR LIBRO INDIVIDUAL
 async function deleteBook(id) {
   if (confirm('¿Eliminar este libro de manera permanente del catálogo e inventario?')) {
     await fetch(`${API_URL}/books/${id}`, { method: 'DELETE' });
@@ -339,7 +335,6 @@ async function deleteBook(id) {
   }
 }
 
-// HISTORIAL DE VENTAS (ADMIN)
 async function loadAdminSales() {
   try {
     const res = await fetch(`${API_URL}/admin/sales`);
