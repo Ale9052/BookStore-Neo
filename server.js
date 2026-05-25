@@ -136,10 +136,40 @@ app.post('/books', async (req, res) => {
 
 // EDITAR libro
 app.put('/books/:id', async (req, res) => {
-  await Book.findByIdAndUpdate(req.params.id, req.body);
-  res.json({ success: true });
-});
+  try {
+    const updatedBook = await Book.findByIdAndUpdate(
+      req.params.id,
+      {
+        title: req.body.title,
+        author: req.body.author,
+        category: req.body.category,
+        price: req.body.price,
+        image: req.body.image,
+        full_link: req.body.full_link
+      },
+      { new: true }
+    );
 
+    if (!updatedBook) {
+      return res.status(404).json({
+        success: false,
+        message: 'Libro no encontrado'
+      });
+    }
+
+    res.json({
+      success: true,
+      book: updatedBook
+    });
+
+  } catch (err) {
+    console.error("ERROR EDITANDO:", err);
+    res.status(500).json({
+      success: false,
+      message: 'Error actualizando libro'
+    });
+  }
+});
 // ELIMINAR un libro
 app.delete('/books/:id', async (req, res) => {
   try {
