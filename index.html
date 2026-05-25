@@ -106,7 +106,8 @@
           <div class="admin-card">
             <h3 id="formActionTitle">Añadir Nuevo Libro</h3>
             <form id="adminBookForm">
-              <input type="hidden" id="adminBookId"> <div class="form-group">
+              <input type="hidden" id="adminBookId">
+              <div class="form-group">
                 <label>TÍTULO DEL LIBRO</label>
                 <input type="text" id="adminTitle" placeholder="Ej: El Alquimista" required>
               </div>
@@ -136,9 +137,9 @@
                 <label>ENLACE DEL LIBRO COMPLETO (PDF/DRIVE)</label>
                 <input type="url" id="adminLink" placeholder="Ej: https://drive.google.com/..." required>
               </div>
-              <div class="admin-button-group" style="display: flex; gap: 10px;">
+              <div class="admin-button-group" style="display: flex; gap: 10px; margin-top: 1rem;">
                 <button type="submit" id="btnAdminSubmit" class="btn-submit" style="flex: 2;">Publicar Libro</button>
-                <button type="button" id="btnClearFormFields" class="btn-clear" style="flex: 1; background-color: #6c757d;"><i class="fas fa-eraser"></i> Vaciar Campos</button>
+                <button type="button" id="btnClearFormFields" class="btn-clear" style="flex: 1; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;"><i class="fas fa-eraser"></i> Vaciar Campos</button>
               </div>
             </form>
           </div>
@@ -146,7 +147,7 @@
           <div class="admin-card">
             <div class="card-header-inline" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
               <h3>Inventario de Libros</h3>
-              <button id="clearAllBooksBtn" class="btn-clear" style="background-color: #dc3545; padding: 6px 12px; font-size: 0.85rem;"><i class="fas fa-dumpster"></i> Borrar Todo</button>
+              <button id="clearAllBooksBtn" class="btn-clear" style="background-color: #dc3545; color: white; border: none; padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; cursor: pointer;"><i class="fas fa-dumpster"></i> Borrar Todo</button>
             </div>
             <p class="tip">Aquí puedes ver, controlar, editar y eliminar los libros disponibles.</p>
             <div class="table-container">
