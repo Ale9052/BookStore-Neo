@@ -1,243 +1,423 @@
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const path = require('path');
+const API_URL = "https://bookstore-neo.onrender.com"; 
+let allBooksLocal = [];
+let userPaidBookIds = []; 
+let isEditing = false; 
+let selectedBookForModal = null; 
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+document.addEventListener('DOMContentLoaded', () => {
+  checkSession();
 
-app.use(cors());
-app.use(express.json());
-app.use(express.static(__dirname));
+  document.getElementById('showRegister').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('login-box').classList.add('hidden');
+    document.getElementById('register-box').classList.remove('hidden');
+  });
 
-// MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ Conectado a MongoDB Atlas'))
-  .catch(err => console.error('❌ Error conectando a MongoDB:', err));
+  document.getElementById('showLogin').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('register-box').classList.add('hidden');
+    document.getElementById('login-box').classList.remove('hidden');
+  });
 
-// MODELOS
-const User = mongoose.model('User', new mongoose.Schema({
-  name: String,
-  email: String,
-  password: String,
-  role: String
-}));
+  document.getElementById('bookSearchInput').addEventListener('input', (e) => {
+    filterBooks(e.target.value.toLowerCase().trim());
+  });
 
-const Book = mongoose.model('Book', new mongoose.Schema({
-  title: String,
-  author: String,
-  category: String,
-  price: Number,
-  image: String,
-  full_link: String,
-  badge: String
-}));
+  document.getElementById('modalAddToCartBtn').addEventListener('click', async () => {
+    if (selectedBookForModal) {
+      await addToCart(selectedBookForModal.id);
+      document.getElementById('purchaseModal').style.display = 'none';
+      abrirVistaCarrito();
+    }
+  });
 
-const CartItem = mongoose.model('CartItem', new mongoose.Schema({
-  user_id: String,
-  book_id: String,
-  quantity: { type: Number, default: 1 }
-}));
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
 
-const Order = mongoose.model('Order', new mongoose.Schema({
-  user_email: String,
-  book_id: String,
-  title: String,
-  price: Number
-}));
+    try {
+      const res = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem('userId', data.userId);
+        localStorage.setItem('userEmail', email);
+        localStorage.setItem('userRole', data.role);
+        localStorage.setItem('userName', data.name || email);
+        checkSession();
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      alert("No se pudo conectar con el servidor.");
+    }
+  });
 
-// HOME
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('registerName').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
+    const password = document.getElementById('registerPassword').value.trim();
+
+    try {
+      const res = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('¡Cuenta creada con éxito!');
+        document.getElementById('register-box').classList.add('hidden');
+        document.getElementById('login-box').classList.remove('hidden');
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.clear();
+    window.location.reload();
+  });
+
+  const categoryButtons = document.querySelectorAll('.btn-category');
+  categoryButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      categoryButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      regresarAlCatalogo();
+      filterBooks(document.getElementById('bookSearchInput').value.toLowerCase().trim());
+    });
+  });
+
+  document.getElementById('adminBookForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('adminBookId').value;
+    const title = document.getElementById('adminTitle').value.trim();
+    const author = document.getElementById('adminAuthor').value.trim();
+    const category = document.getElementById('adminCategory').value.trim();
+    const price = parseFloat(document.getElementById('adminPrice').value);
+    const image = document.getElementById('adminImage').value.trim();
+    const full_link = document.getElementById('adminLink').value.trim();
+
+    const url = isEditing ? `${API_URL}/books/${id}` : `${API_URL}/books`;
+    const method = isEditing ? 'PUT' : 'POST';
+
+    try {
+      const res = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, author, category, price, image, full_link })
+      });
+      const data = await res.json();
+      if (data.success || data.message) {
+        alert(isEditing ? "¡Libro actualizado!" : "¡Libro publicado!");
+        resetAdminForm();
+        await loadCatalog(); 
+      } else {
+        alert("Error al guardar en base de datos.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión al guardar.");
+    }
+  });
+
+  // CORRECCIÓN: Botón Borrar Todo
+  document.getElementById('clearAllBooksBtn').addEventListener('click', async () => {
+    if (confirm('⚠️ ¿Borrar todos los libros?')) {
+      try {
+        await fetch(`${API_URL}/admin/books/clear-all`, { method: 'DELETE' });
+        loadCatalog();
+      } catch (err) { alert("Error al borrar todo."); }
+    }
+  });
 });
 
-// REGISTER
-app.post('/register', async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
+function togglePasswordVisibility(inputId, buttonElement) {
+  const input = document.getElementById(inputId);
+  const icon = buttonElement.querySelector('i');
+  if (input.type === 'password') { input.type = 'text'; icon.className = 'fas fa-eye-slash'; }
+  else { input.type = 'password'; icon.className = 'fas fa-eye'; }
+}
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.json({
-        success: false,
-        message: 'El correo ya existe'
-      });
+function abrirVistaCarrito() {
+  document.getElementById('customer-view').classList.add('hidden');
+  document.getElementById('cart-view').classList.remove('hidden');
+  renderizarVistaCarritoCompleta();
+}
+
+function regresarAlCatalogo() {
+  document.getElementById('cart-view').classList.add('hidden');
+  document.getElementById('customer-view').classList.remove('hidden');
+}
+
+async function renderizarVistaCarritoCompleta() {
+  const userId = localStorage.getItem('userId');
+  const container = document.getElementById('cartFullItemsList');
+  const subtotalLabel = document.getElementById('summarySubtotal');
+  const totalLabel = document.getElementById('summaryTotal');
+  
+  if(!container || !userId) return;
+
+  container.innerHTML = '<p>Cargando...</p>';
+
+  try {
+    const res = await fetch(`${API_URL}/cart/${userId}`);
+    const cartItems = await res.json();
+    container.innerHTML = '';
+
+    if (cartItems.length === 0) {
+      container.innerHTML = '<p>Tu carrito está vacío.</p>';
+      subtotalLabel.textContent = "Q0.00";
+      totalLabel.textContent = "Q0.00";
+      return;
     }
 
-    const newUser = await User.create({
-      name,
-      email,
-      password,
-      role: 'user'
+    let totalSum = 0;
+    cartItems.forEach(item => {
+      const bookData = allBooksLocal.find(b => b.id === Number(item.book_id)) || item;
+      const price = parseFloat(bookData.price) || 0;
+      totalSum += price;
+
+      const itemRow = document.createElement('div');
+      itemRow.classList.add('cart-main-item');
+      itemRow.innerHTML = `
+        <img src="${bookData.image}" alt="Portada">
+        <div style="flex:1;">
+          <div style="color:white; font-weight:bold;">${bookData.title}</div>
+          <div style="color:#a0aec0; font-size:0.8rem;">Por ${bookData.author}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="color:#00f5d4; font-weight:bold;">Q${price.toFixed(2)}</div>
+          <button onclick="eliminarDelCarritoCompleto(${item.id})" style="background:none; border:none; color:#e53e3e; cursor:pointer;">Eliminar</button>
+        </div>
+      `;
+      container.appendChild(itemRow);
     });
 
-    res.json({
-      success: true,
-      userId: newUser._id,
-      role: newUser.role,
-      name: newUser.name
-    });
-
-  } catch (err) {
-    res.status(500).json({ success: false });
+    subtotalLabel.textContent = `Q${totalSum.toFixed(2)}`;
+    totalLabel.textContent = `Q${totalSum.toFixed(2)}`;
+  } catch (error) {
+    console.error(error);
   }
-});
+}
 
-// LOGIN
-app.post('/login', async (req, res) => {
+async function eliminarDelCarritoCompleto(cartItemId) {
   try {
-    const { email, password } = req.body;
+    await fetch(`${API_URL}/cart/${cartItemId}`, { method: 'DELETE' });
+    renderizarVistaCarritoCompleta();
+    updateCartCount();
+  } catch (err) { console.error(err); }
+}
 
-    const user = await User.findOne({ email, password });
+async function procesarCompraFinal() {
+  const userId = localStorage.getItem('userId');
+  const userEmail = localStorage.getItem('userEmail');
+  
+  try {
+    const resCart = await fetch(`${API_URL}/cart/${userId}`);
+    const cartItems = await resCart.json();
 
-    if (!user) {
-      return res.json({
-        success: false,
-        message: 'Credenciales incorrectas'
-      });
+    if (cartItems.length === 0) {
+      alert("No hay artículos en el carrito.");
+      return;
     }
 
-    res.json({
-      success: true,
-      userId: user._id,
-      role: user.role,
-      name: user.name
-    });
-
-  } catch (err) {
-    res.status(500).json({ success: false });
-  }
-});
-
-// ================= LIBROS =================
-
-// Obtener libros
-app.get('/books', async (req, res) => {
-  try {
-    const books = await Book.find();
-    res.json(books);
-  } catch {
-    res.status(500).json([]);
-  }
-});
-
-// Crear libro
-app.post('/books', async (req, res) => {
-  try {
-    const newBook = await Book.create(req.body);
-    res.json({
-      success: true,
-      bookId: newBook._id
-    });
-  } catch {
-    res.status(500).json({ success: false });
-  }
-});
-
-// Editar libro
-app.put('/books/:id', async (req, res) => {
-  try {
-    const updatedBook = await Book.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-
-    if (!updatedBook) {
-      return res.status(404).json({
-        success: false,
-        message: 'Libro no encontrado'
+    for (const item of cartItems) {
+      const bookData = allBooksLocal.find(b => b.id === Number(item.book_id)) || item;
+      
+      await fetch(`${API_URL}/admin/sales`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_email: userEmail,
+          book_id: item.book_id,
+          title: bookData.title,
+          price: bookData.price
+        })
       });
+      await fetch(`${API_URL}/cart/${item.id}`, { method: 'DELETE' });
     }
 
-    res.json({
-      success: true,
-      book: updatedBook
+    alert("¡Pago exitoso!");
+    regresarAlCatalogo();
+    updateCartCount();
+    renderBooks(allBooksLocal); 
+  } catch (error) { alert("Error al procesar el pago."); }
+}
+
+async function checkSession() {
+  const userId = localStorage.getItem('userId');
+  const userRole = localStorage.getItem('userRole');
+  const headerControls = document.getElementById('header-controls');
+  const cartButton = document.getElementById('cartBtn');
+
+  if (userId) {
+    headerControls.style.display = 'flex';
+    document.getElementById('auth-section').classList.add('hidden');
+    document.getElementById('app-content').classList.remove('hidden');
+    document.getElementById('userGreeting').textContent = localStorage.getItem('userEmail');
+
+    if (userRole === 'admin') {
+      document.getElementById('admin-view').classList.remove('hidden');
+      document.getElementById('customer-view').classList.add('hidden');
+      loadCatalog();
+    } else {
+      document.getElementById('admin-view').classList.add('hidden');
+      document.getElementById('customer-view').classList.remove('hidden');
+      if(cartButton) cartButton.style.display = 'inline-flex';
+      await loadUserPurchases(); 
+      loadCatalog(); 
+      updateCartCount();
+    }
+  }
+}
+
+async function loadUserPurchases() {
+  const userEmail = localStorage.getItem('userEmail');
+  try {
+    const res = await fetch(`${API_URL}/admin/sales`);
+    const sales = await res.json();
+    userPaidBookIds = sales.filter(s => s.user_email === userEmail).map(s => Number(s.book_id));
+  } catch (e) { console.error(e); }
+}
+
+async function loadCatalog() {
+  try {
+    const res = await fetch(`${API_URL}/books`);
+    allBooksLocal = await res.json();
+    renderBooks(allBooksLocal);
+    renderInventoryTable(allBooksLocal);
+  } catch (err) { console.error(err); }
+}
+
+function renderBooks(booksList) {
+  const container = document.getElementById('booksContainer');
+  const userRole = localStorage.getItem('userRole');
+  if(!container) return;
+  container.innerHTML = '';
+  
+  const activeCategory = document.querySelector('.btn-category.active')?.getAttribute('data-category') || 'Todos';
+
+  booksList.forEach(book => {
+    if (activeCategory !== 'Todos' && book.category !== activeCategory) return;
+
+    const hasAccess = userRole === 'admin' || userPaidBookIds.includes(Number(book.id));
+    const card = document.createElement('div');
+    card.classList.add('book-card');
+    card.innerHTML = `
+      <div>
+        <img src="${book.image}" alt="${book.title}">
+        <div class="book-title">${book.title}</div>
+        <div class="book-author">Por ${book.author}</div>
+      </div>
+      <div>
+        <div class="book-price">Q${parseFloat(book.price).toFixed(2)}</div>
+        <button class="btn-action" style="background-color:${hasAccess ? '#00f5d4':'#2d3748'}; color:${hasAccess ? 'black':'white'}" onclick="handleBookAccess(${book.id})">
+          ${hasAccess ? '🔓 Ver Libro' : '🔒 Comprar'}
+        </button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function handleBookAccess(bookId) {
+  const book = allBooksLocal.find(b => b.id === bookId);
+  const userRole = localStorage.getItem('userRole');
+  const hasAccess = userRole === 'admin' || userPaidBookIds.includes(Number(book.id));
+
+  if (hasAccess) {
+    window.open(book.full_link, '_blank');
+  } else {
+    selectedBookForModal = book;
+    document.getElementById('purchaseModal').style.display = 'flex';
+  }
+}
+
+function renderInventoryTable(booksList) {
+  const tableBody = document.getElementById('inventoryTableBody');
+  if (!tableBody) return;
+  tableBody.innerHTML = '';
+
+  booksList.forEach(book => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><img src="${book.image}" style="width:30px;"></td>
+      <td>${book.title}</td>
+      <td>${book.category}</td>
+      <td>Q${parseFloat(book.price).toFixed(2)}</td>
+      <td>
+        <button onclick="startEditBook(${book.id})">Edit</button>
+        <button onclick="deleteBook(${book.id})">Del</button>
+      </td>
+    `;
+    tableBody.appendChild(tr);
+  });
+}
+
+function filterBooks(search) {
+  const filtered = allBooksLocal.filter(b => b.title.toLowerCase().includes(search) || b.author.toLowerCase().includes(search));
+  renderBooks(filtered);
+}
+
+function startEditBook(id) {
+  const book = allBooksLocal.find(b => b.id === id);
+  isEditing = true;
+  document.getElementById('formActionTitle').textContent = "Modificar Libro";
+  document.getElementById('btnAdminSubmit').textContent = "Guardar Cambios";
+  document.getElementById('adminBookId').value = book.id;
+  document.getElementById('adminTitle').value = book.title;
+  document.getElementById('adminAuthor').value = book.author;
+  document.getElementById('adminCategory').value = book.category;
+  document.getElementById('adminPrice').value = book.price;
+  document.getElementById('adminImage').value = book.image;
+  document.getElementById('adminLink').value = book.full_link;
+  document.getElementById('adminBookForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+function resetAdminForm() {
+  isEditing = false;
+  document.getElementById('adminBookForm').reset();
+  document.getElementById('adminBookId').value = '';
+  document.getElementById('formActionTitle').textContent = "Añadir Nuevo Libro";
+  document.getElementById('btnAdminSubmit').textContent = "Publicar Libro";
+}
+
+async function addToCart(bookId) {
+  const userId = localStorage.getItem('userId');
+  try {
+    await fetch(`${API_URL}/cart`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, book_id: bookId })
     });
+    updateCartCount();
+  } catch (err) { console.error(err); }
+}
 
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false });
-  }
-});
-
-// Eliminar un libro
-app.delete('/books/:id', async (req, res) => {
+async function updateCartCount() {
+  const userId = localStorage.getItem('userId');
   try {
-    await Book.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch {
-    res.status(500).json({ success: false });
+    const res = await fetch(`${API_URL}/cart/${userId}`);
+    const cartItems = await res.json();
+    document.getElementById('cartCount').textContent = cartItems.length;
+  } catch (err) { console.error(err); }
+}
+
+async function deleteBook(id) {
+  if (confirm('¿Eliminar libro?')) {
+    try {
+      await fetch(`${API_URL}/books/${id}`, { method: 'DELETE' });
+      loadCatalog();
+    } catch (err) { alert("Error al borrar."); }
   }
-});
-
-// Borrar TODO inventario
-app.delete('/admin/books/clear-all', async (req, res) => {
-  try {
-    await Book.deleteMany({});
-    res.json({ success: true });
-  } catch {
-    res.status(500).json({ success: false });
-  }
-});
-
-// ================= CARRITO =================
-
-// Obtener carrito
-app.get('/cart/:userId', async (req, res) => {
-  try {
-    const cartItems = await CartItem.find({
-      user_id: req.params.userId
-    });
-    res.json(cartItems);
-  } catch {
-    res.status(500).json([]);
-  }
-});
-
-// Agregar al carrito
-app.post('/cart', async (req, res) => {
-  try {
-    await CartItem.create(req.body);
-    res.json({ success: true });
-  } catch {
-    res.status(500).json({ success: false });
-  }
-});
-
-// Eliminar del carrito
-app.delete('/cart/:id', async (req, res) => {
-  try {
-    await CartItem.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch {
-    res.status(500).json({ success: false });
-  }
-});
-
-// ================= VENTAS =================
-
-// Registrar venta
-app.post('/admin/sales', async (req, res) => {
-  try {
-    await Order.create(req.body);
-    res.json({ success: true });
-  } catch {
-    res.status(500).json({ success: false });
-  }
-});
-
-// Ver ventas
-app.get('/admin/sales', async (req, res) => {
-  try {
-    const sales = await Order.find();
-    res.json(sales);
-  } catch {
-    res.status(500).json([]);
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
-});
+}
